@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE brand_ledger_query_jobs ADD COLUMN resultKey TEXT NULL; ALTER TABLE brand_ledger_query_jobs DROP COLUMN resultJson;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 42MFkkuN8AwZjE9.5ff8abe80de3 --database 8J5yw9ucvmGP3Bpkmh5rkc --execute ALTER TABLE brand_ledger_query_jobs ADD COLUMN resultKey TEXT NULL; ALTER TABLE brand_ledger_query_jobs DROP COLUMN resultJson;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2489
+}

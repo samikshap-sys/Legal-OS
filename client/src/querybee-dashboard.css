@@ -1,0 +1,196 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   QUERYBEE — FYND FINOPS DESIGN SYSTEM
+   Primary accent : #7C5CFC (light purple)
+   Sidebar bg     : #1C1C1E (Boltic charcoal)
+   Content bg     : #F5F5F7 (light grey)
+   Card bg        : #FFFFFF
+   Text primary   : #1C1C1E
+   Text secondary : #6B7280
+   Text muted     : #9AA0AB
+   Border         : #E5E7EB
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Shell ─────────────────────────────────────────────────────────────────── */
+.qb-shell{display:flex;flex-direction:column;height:100vh;overflow:hidden;background:#F5F5F7;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1C1C1E}
+
+/* ── Top bar ───────────────────────────────────────────────────────────────── */
+.qb-topbar{display:flex;align-items:center;gap:1rem;height:56px;padding:0 1.25rem 0 0.5rem;background:#1C1C1E;border-bottom:1px solid rgba(255,255,255,0.08);z-index:100;flex-shrink:0}
+.qb-tb-left{display:flex;align-items:center;gap:.75rem;min-width:220px}
+.qb-tb-brand{display:flex;align-items:center;gap:.5rem}
+.qb-tb-logo{width:36px;height:36px;object-fit:contain;flex-shrink:0}
+.qb-tb-heart{width:48px;height:48px;flex-shrink:0;object-fit:contain;border-radius:10px;}
+.qb-tb-title{font-size:1.25rem;font-weight:800;color:#FFFFFF;letter-spacing:-.03em;font-family:'Inter','Segoe UI',system-ui,sans-serif}
+.qb-tb-search{flex:1;display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:.4rem .75rem;max-width:480px;color:rgba(255,255,255,0.5);font-size:.85rem}
+.qb-tb-search input{border:none;background:transparent;outline:none;font-size:.85rem;color:#FFFFFF;width:100%}
+.qb-tb-search input::placeholder{color:rgba(255,255,255,0.4)}
+.qb-tb-right{margin-left:auto;display:flex;align-items:center;gap:.75rem}
+.qb-tb-divider{display:inline-block;width:1px;height:22px;background:rgba(255,255,255,0.25);margin:0 .5rem;flex-shrink:0}
+.qb-tb-user{display:flex;align-items:center;gap:.6rem;cursor:default}
+.qb-tb-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#9B7FFF);color:#fff;font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;letter-spacing:0}
+.qb-tb-user-info{display:flex;flex-direction:column;gap:1px;text-align:right}
+.qb-tb-user-name{font-size:.78rem;font-weight:700;color:#FFFFFF;line-height:1.2;white-space:nowrap}
+.qb-tb-user-email{font-size:.68rem;color:rgba(255,255,255,0.5);line-height:1.2;white-space:nowrap}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────────── */
+.qb-sidebar{position:fixed;top:56px;left:0;width:80px;height:calc(100vh - 56px);background:#1C1C1E;display:flex;flex-direction:column;z-index:90;overflow:hidden;border-right:1px solid rgba(255,255,255,0.06)}
+.qb-sb-nav{flex:1;padding:.5rem 0 5rem;display:flex;flex-direction:column;gap:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.qb-sb-nav::-webkit-scrollbar{display:none}
+.qb-sbi{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:.85rem .5rem;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.9);font-size:.6rem;font-weight:500;text-align:center;white-space:nowrap;border-radius:0;transition:background .15s,color .15s;width:100%}
+.qb-sbi i{font-size:1.35rem;min-width:unset;text-align:center;line-height:1}
+.qb-sbi span{font-size:.6rem;font-weight:500;line-height:1.2;letter-spacing:.01em}
+.qb-sbi:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9)}
+.qb-sbi.active{background:rgba(124,92,252,0.15);color:#7C5CFC;font-weight:600;border-left:none;border-right:3px solid #7C5CFC}
+.qb-sb-section{padding:.4rem .75rem .2rem;font-size:.55rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,0.3);text-align:center}
+.qb-sb-foot{position:absolute;bottom:0;left:0;right:0;padding:.6rem .5rem;border-top:1px solid rgba(255,255,255,.08);background:#1C1C1E;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem}
+.qb-sb-home-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);text-decoration:none;font-size:1rem;transition:background .15s;flex-shrink:0;border:none;cursor:pointer}
+.qb-sb-home-btn:hover{background:rgba(124,92,252,0.25);color:#7C5CFC}
+.qb-main{margin-left:80px;margin-top:0;height:calc(100vh - 56px);overflow-y:auto}
+
+/* ── Page content ──────────────────────────────────────────────────────────── */
+.qb-pg-content{padding:1.5rem 1.75rem}
+.qb-ph-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.qb-ph-h{font-size:1.35rem;font-weight:700;color:#1C1C1E;margin:0}
+.qb-ph-sub{font-size:.82rem;color:#9AA0AB;margin-top:.2rem}
+.qb-ph-actions{display:flex;gap:.75rem}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.qb-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .9rem;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .15s,box-shadow .15s;border:none}
+.qb-btn-primary{background:#7C5CFC;color:#fff;box-shadow:0 2px 8px rgba(124,92,252,0.3)}
+.qb-btn-primary:hover{background:#6B4EE8;box-shadow:0 4px 14px rgba(124,92,252,0.4)}
+.qb-btn-primary:disabled{background:#C4B5FD;box-shadow:none;cursor:not-allowed}
+.qb-btn-outline{background:#fff;color:#6B7280;border:1.5px solid #E5E7EB}
+.qb-btn-outline:hover{background:#F5F5F7;border-color:#7C5CFC;color:#7C5CFC}
+.qb-btn-ghost{background:transparent;color:#6B7280;border:1.5px solid #E5E7EB}
+.qb-btn-ghost:hover{background:#F5F5F7}
+.qb-btn-danger{background:#EF4444;color:#fff}
+.qb-btn-danger:hover{background:#DC2626}
+
+/* ── Cards ─────────────────────────────────────────────────────────────────── */
+.qb-card{background:#fff;border-radius:12px;padding:1.25rem;border:1px solid #E5E7EB;box-shadow:0 1px 4px rgba(0,0,0,0.05)}
+.qb-card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem}
+.qb-card-title{font-size:.9rem;font-weight:700;color:#1C1C1E}
+.qb-card-sub{font-size:.75rem;color:#9AA0AB;margin-bottom:1rem}
+
+/* ── KPI cards ─────────────────────────────────────────────────────────────── */
+.qb-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem}
+.qb-kpi{background:#fff;border-radius:12px;padding:1.1rem 1.25rem;border:1px solid #E5E7EB;border-top:3px solid #7C5CFC;box-shadow:0 1px 4px rgba(0,0,0,0.06);transition:box-shadow .18s,transform .18s}
+.qb-kpi:hover{box-shadow:0 4px 14px rgba(0,0,0,0.1);transform:translateY(-2px)}
+.qb-kpi-lbl{font-size:.65rem;font-weight:700;color:#9AA0AB;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.35rem}
+.qb-kpi-val{font-size:2rem;font-weight:800;background:linear-gradient(135deg,#7C5CFC 0%,#9B7FFF 60%,#A78BFA 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:.25rem}
+.qb-kpi-sub{font-size:.75rem;color:#9AA0AB}
+
+/* ── Tables ────────────────────────────────────────────────────────────────── */
+.qb-tbl{width:100%;border-collapse:collapse;font-size:.82rem}
+.qb-tbl th{padding:.6rem .75rem;text-align:left;font-size:.7rem;font-weight:700;color:#9AA0AB;letter-spacing:.06em;text-transform:uppercase;border-bottom:1.5px solid #E5E7EB}
+.qb-tbl td{padding:.65rem .75rem;border-bottom:1px solid #F5F5F7;color:#1C1C1E}
+.qb-tbl tr:last-child td{border-bottom:none}
+.qb-tbl tr:hover td{background:#FAFAFA}
+
+/* ── Status pills ──────────────────────────────────────────────────────────── */
+.qb-pill{display:inline-block;padding:.2rem .55rem;border-radius:20px;font-size:.72rem;font-weight:600}
+.qb-pill-purple{background:rgba(124,92,252,0.08);color:#7C5CFC;border:1px solid rgba(124,92,252,0.2)}
+.qb-pill-success{background:rgba(5,150,105,0.08);color:#059669;border:1px solid rgba(5,150,105,0.2)}
+.qb-pill-warn{background:rgba(217,119,6,0.08);color:#D97706;border:1px solid rgba(217,119,6,0.2)}
+.qb-pill-error{background:rgba(239,68,68,0.08);color:#EF4444;border:1px solid rgba(239,68,68,0.2)}
+.qb-pill-muted{background:#F3F4F6;color:#6B7280;border:1px solid #E5E7EB}
+
+/* ── Form fields ───────────────────────────────────────────────────────────── */
+.qb-input{padding:.5rem .75rem;border:1.5px solid #E5E7EB;border-radius:8px;font-size:.85rem;color:#1C1C1E;background:#fff;outline:none;font-family:inherit;width:100%}
+.qb-input:focus{border-color:#7C5CFC;box-shadow:0 0 0 3px rgba(124,92,252,0.1)}
+.qb-select{padding:.45rem .75rem;border:1.5px solid #E5E7EB;border-radius:8px;font-size:.82rem;color:#1C1C1E;background:#fff;outline:none;cursor:pointer}
+.qb-select:focus{border-color:#7C5CFC}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+.qb-scroll{overflow-x:auto;overflow-y:auto}
+.qb-scroll::-webkit-scrollbar{height:8px;width:6px}
+.qb-scroll::-webkit-scrollbar-track{background:#F0F0F0;border-radius:4px}
+.qb-scroll::-webkit-scrollbar-thumb{background:rgba(124,92,252,0.35);border-radius:4px}
+.qb-scroll::-webkit-scrollbar-thumb:hover{background:rgba(124,92,252,0.6)}
+
+/* ── Chip / badge ──────────────────────────────────────────────────────────── */
+.qb-chip{font-size:.62rem;font-weight:700;letter-spacing:.06em;padding:.2rem .55rem;border-radius:20px;border:1px solid #E5E7EB;color:#6B7280;background:#F5F5F7}
+.qb-chip-live{border-color:#7C5CFC;color:#7C5CFC;background:rgba(124,92,252,0.06)}
+
+/* ── Loading ───────────────────────────────────────────────────────────────── */
+.qb-loading{display:flex;align-items:center;justify-content:center;height:100%;color:#9AA0AB;font-size:.85rem;padding:2rem}
+
+/* ── Connection status ─────────────────────────────────────────────────────── */
+.qb-conn-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.qb-conn-dot.connected{background:#10B981}
+.qb-conn-dot.disconnected{background:#EF4444}
+.qb-conn-status{display:flex;align-items:center;font-size:.75rem;font-weight:600;color:#6B7280}
+
+/* ── Step progress (Invoice Expo) ──────────────────────────────────────────── */
+.qb-step-bar{display:flex;align-items:center;gap:0;margin-bottom:1.5rem}
+.qb-step{display:flex;flex-direction:column;align-items:center;gap:.35rem;flex:1}
+.qb-step-circle{width:36px;height:36px;border-radius:50%;border:2px solid #E5E7EB;background:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:#9AA0AB;transition:all .3s}
+.qb-step-circle.active{border-color:#7C5CFC;background:#7C5CFC;color:#fff;box-shadow:0 0 0 4px rgba(124,92,252,0.2)}
+.qb-step-circle.done{border-color:#10B981;background:#10B981;color:#fff}
+.qb-step-label{font-size:.65rem;font-weight:600;color:#9AA0AB;text-align:center}
+.qb-step-label.active{color:#7C5CFC}
+.qb-step-label.done{color:#10B981}
+.qb-step-line{flex:1;height:2px;background:#E5E7EB;margin-top:-18px}
+.qb-step-line.done{background:#10B981}
+
+/* ── Upload zone ───────────────────────────────────────────────────────────── */
+.qb-dropzone{border:2px dashed #E5E7EB;border-radius:12px;padding:2.5rem 1.5rem;text-align:center;background:#FAFAFA;transition:border-color .2s,background .2s;cursor:pointer}
+.qb-dropzone:hover,.qb-dropzone.drag-over{border-color:#7C5CFC;background:rgba(124,92,252,0.04)}
+.qb-dropzone-icon{font-size:2rem;color:#C4B5FD;margin-bottom:.75rem}
+.qb-dropzone-text{font-size:.85rem;color:#6B7280}
+.qb-dropzone-hint{font-size:.75rem;color:#9AA0AB;margin-top:.25rem}
+
+/* ── File type toggle ──────────────────────────────────────────────────────── */
+.qb-ft-toggle{display:flex;gap:.75rem;margin-bottom:.75rem}
+.qb-ft-btn{flex:1;padding:.55rem;border-radius:8px;border:1.5px solid #E5E7EB;background:#fff;font-size:.82rem;font-weight:600;color:#6B7280;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:.4rem}
+.qb-ft-btn.active{border-color:#7C5CFC;background:rgba(124,92,252,0.06);color:#7C5CFC}
+
+/* ── Validation results ────────────────────────────────────────────────────── */
+.qb-val-ok{background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.25);border-radius:8px;padding:1rem 1.25rem;color:#065f46;font-size:.85rem}
+.qb-val-err{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:1rem 1.25rem;color:#991b1b;font-size:.85rem}
+.qb-val-warn{background:rgba(217,119,6,0.06);border:1px solid rgba(217,119,6,0.25);border-radius:8px;padding:1rem 1.25rem;color:#92400e;font-size:.85rem}
+
+/* ── Pagination ────────────────────────────────────────────────────────────── */
+.qb-pagination{display:flex;align-items:center;justify-content:flex-end;gap:.5rem;margin-top:.75rem;font-size:.8rem;color:#6B7280}
+.qb-pg-btn{padding:.3rem .6rem;border-radius:6px;border:1px solid #E5E7EB;background:#fff;cursor:pointer;font-size:.78rem;color:#6B7280;transition:all .15s}
+.qb-pg-btn:hover:not(:disabled){border-color:#7C5CFC;color:#7C5CFC}
+.qb-pg-btn:disabled{opacity:.4;cursor:not-allowed}
+.qb-pg-btn.active{background:#7C5CFC;border-color:#7C5CFC;color:#fff}
+
+/* ── Code editor area ──────────────────────────────────────────────────────── */
+.qb-editor-wrap{border-radius:10px;overflow:hidden;border:1px solid #E5E7EB}
+.qb-editor-header{background:#7C5CFC;padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between}
+.qb-editor-header-title{font-size:.78rem;font-weight:700;color:#fff;letter-spacing:.04em}
+.qb-editor-body{background:#1e1e2e;min-height:160px;font-family:'JetBrains Mono','Fira Code','Courier New',monospace;font-size:.85rem;color:#cdd6f4}
+.qb-editor-footer{background:#F5F5F7;padding:.5rem 1rem;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #E5E7EB}
+
+/* ── Results table ─────────────────────────────────────────────────────────── */
+.qb-results-tbl{width:max-content;min-width:100%;border-collapse:collapse;font-size:.79rem}
+.qb-results-tbl thead th{background:#7C5CFC;color:#fff;padding:.6rem .85rem;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;text-align:left;position:sticky;top:0;z-index:5}
+.qb-results-tbl tbody td{padding:.6rem .85rem;border-bottom:1px solid #F5F5F7;color:#1C1C1E;white-space:nowrap}
+.qb-results-tbl tbody tr:hover td{background:#FAFAFA}
+.qb-results-tbl tbody tr:last-child td{border-bottom:none}
+
+/* ── Log box ───────────────────────────────────────────────────────────────── */
+.qb-log-box{background:#0f0f1a;border-radius:8px;padding:1rem;font-family:'JetBrains Mono','Fira Code',monospace;font-size:.78rem;color:#a6e3a1;max-height:300px;overflow-y:auto;line-height:1.6}
+.qb-log-box::-webkit-scrollbar{width:4px}
+.qb-log-box::-webkit-scrollbar-thumb{background:rgba(124,92,252,0.4);border-radius:2px}
+
+/* ── Progress bar ──────────────────────────────────────────────────────────── */
+.qb-progress-bar{height:6px;background:#E5E7EB;border-radius:3px;overflow:hidden;margin:.5rem 0}
+.qb-progress-fill{height:100%;background:linear-gradient(90deg,#7C5CFC,#9B7FFF);border-radius:3px;transition:width .3s}
+
+/* ── BQ Connection page ────────────────────────────────────────────────────── */
+.qb-conn-card{background:#fff;border-radius:16px;padding:2rem;border:1px solid #E5E7EB;max-width:520px;margin:0 auto}
+.qb-conn-icon{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#7C5CFC,#9B7FFF);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;box-shadow:0 4px 16px rgba(124,92,252,0.3)}
+.qb-conn-status-row{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-radius:8px;border:1px solid #E5E7EB;margin-bottom:1rem;background:#FAFAFA}
+.qb-conn-status-row.ok{border-color:rgba(5,150,105,0.3);background:rgba(5,150,105,0.04)}
+.qb-conn-status-row.err{border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.04)}
+
+/* ── Refresh token display ─────────────────────────────────────────────────── */
+.qb-token-box{background:#0f0f1a;border-radius:8px;padding:.75rem 1rem;font-family:monospace;font-size:.75rem;color:#a6e3a1;word-break:break-all;margin:.75rem 0}
+
+/* ── Animations ────────────────────────────────────────────────────────────── */
+@keyframes qb-spin{to{transform:rotate(360deg)}}
+.qb-spin{animation:qb-spin 1s linear infinite}
+@keyframes qb-pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.qb-pulse{animation:qb-pulse 1.5s ease-in-out infinite}

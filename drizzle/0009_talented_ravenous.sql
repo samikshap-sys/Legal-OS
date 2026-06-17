@@ -1,0 +1,1 @@
+ALTER TABLE `bq_upload_history` ADD `fileName` varchar(512) DEFAULT '';

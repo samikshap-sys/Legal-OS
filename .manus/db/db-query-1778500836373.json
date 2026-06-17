@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `brand_ledger_activity_log` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `userName` varchar(255) NOT NULL DEFAULT '',\n  `activityType` varchar(128) NOT NULL,\n  `companyId` varchar(64) DEFAULT '',\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `brand_ledger_activity_log_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 42MFkkuN8AwZjE9.5ff8abe80de3 --database 8J5yw9ucvmGP3Bpkmh5rkc --execute CREATE TABLE IF NOT EXISTS `brand_ledger_activity_log` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `userName` varchar(255) NOT NULL DEFAULT '',\n  `activityType` varchar(128) NOT NULL,\n  `companyId` varchar(64) DEFAULT '',\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `brand_ledger_activity_log_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1917
+}

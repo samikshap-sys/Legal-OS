@@ -1,0 +1,9 @@
+const bq = process.env.BQ_SERVICE_ACCOUNT_JSON;
+const gcs = process.env.GCS_SERVICE_ACCOUNT_JSON;
+const google = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+console.log('BQ_SERVICE_ACCOUNT_JSON set:', !!bq, bq ? '(len=' + bq.length + ')' : '');
+console.log('GCS_SERVICE_ACCOUNT_JSON set:', !!gcs, gcs ? '(len=' + gcs.length + ')' : '');
+console.log('GOOGLE_SERVICE_ACCOUNT_JSON set:', !!google, google ? '(len=' + google.length + ')' : '');
+if (bq) { try { const j = JSON.parse(bq); console.log('BQ SA email:', j.client_email, 'project:', j.project_id); } catch(e) { console.log('BQ parse error:', e.message); } }
+if (gcs) { try { const j = JSON.parse(gcs); console.log('GCS SA email:', j.client_email, 'project:', j.project_id); } catch(e) { console.log('GCS parse error:', e.message); } }
+if (google) { try { const j = JSON.parse(google); console.log('GOOGLE SA email:', j.client_email, 'project:', j.project_id); } catch(e) { console.log('GOOGLE parse error:', e.message); } }

@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE brand_ledger_download_jobs ADD COLUMN fileKey TEXT NULL; ALTER TABLE brand_ledger_download_jobs DROP COLUMN fileBuffer;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 42MFkkuN8AwZjE9.5ff8abe80de3 --database 8J5yw9ucvmGP3Bpkmh5rkc --execute ALTER TABLE brand_ledger_download_jobs ADD COLUMN fileKey TEXT NULL; ALTER TABLE brand_ledger_download_jobs DROP COLUMN fileBuffer;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2633
+}

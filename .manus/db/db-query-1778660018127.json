@@ -1,0 +1,19 @@
+{
+  "query": "SHOW TABLES LIKE 'brand_ledger%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 42MFkkuN8AwZjE9.5ff8abe80de3 --database 8J5yw9ucvmGP3Bpkmh5rkc --execute SHOW TABLES LIKE 'brand_ledger%';",
+  "rows": [
+    {
+      "Tables_in_8J5yw9ucvmGP3Bpkmh5rkc (brand_ledger%)": "brand_ledger_activity_log"
+    },
+    {
+      "Tables_in_8J5yw9ucvmGP3Bpkmh5rkc (brand_ledger%)": "brand_ledger_download_jobs"
+    },
+    {
+      "Tables_in_8J5yw9ucvmGP3Bpkmh5rkc (brand_ledger%)": "brand_ledger_query_jobs"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_8J5yw9ucvmGP3Bpkmh5rkc (brand_ledger%)\nbrand_ledger_activity_log\nbrand_ledger_download_jobs\nbrand_ledger_query_jobs\n",
+  "stderr": "",
+  "execution_time_ms": 1835
+}

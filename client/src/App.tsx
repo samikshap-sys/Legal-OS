@@ -1,0 +1,179 @@
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/NotFound";
+import { Route, Switch, useLocation } from "wouter";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { QbUserProvider, useQbUser } from "./contexts/QbUserContext";
+import { LcUserProvider, useLcUser } from "./contexts/LcUserContext";
+import { MogamboUserProvider, useMogamboUser } from './contexts/MogamboUserContext';
+import { GaugeUserProvider, useGaugeUser } from './contexts/GaugeUserContext';
+import Home from "./pages/Home";
+import LegalConnect from "./pages/LegalConnect";
+import LegalDashboard from "./pages/LegalDashboard";
+import QueryBee from "./pages/QueryBee";
+import QueryBeeDashboard from "./pages/QueryBeeDashboard";
+import Querypad from "./pages/Querypad";
+import LedgerXHome from "./pages/LedgerXHome";
+import LedgerXDashboard from "./pages/LedgerXDashboard";
+import InvoiceBooking from "./pages/InvoiceBooking";
+
+import InvoiceRegister from "./pages/InvoiceRegister";
+import TallyEntry from "./pages/TallyEntry";
+import AgingAnalysis from "./pages/AgingAnalysis";
+import DPInvoiceBooking from "./pages/DPInvoiceBooking";
+import MogamboHome from "./pages/mogambo/MogamboHome";
+import GaugeLanding from "./pages/GaugeLanding";
+import GaugeApp from "./pages/GaugeApp";
+import GaugeTicketStandalone from "./pages/gauge/GaugeTicketStandalone";
+
+/** Guard: redirect to /legal-connect if not logged in via LC Google OAuth */
+function LcProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { lcUser, lcLoading } = useLcUser();
+  const [, navigate] = useLocation();
+  if (lcLoading) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "linear-gradient(155deg, #1C1C1E 0%, #0A0A0A 100%)", gap: "1.25rem" }}>
+        <svg width="72" height="72" viewBox="0 0 191 194" xmlns="http://www.w3.org/2000/svg" style={{ mixBlendMode: "screen", opacity: 0.95 }}>
+          <path d="M0 0 C63.03 0 126.06 0 191 0 C191 64.02 191 128.04 191 194 C127.97 194 64.94 194 0 194 C0 129.98 0 65.96 0 0 Z M46.461 43.699 C44.245 45.771 41.965 47.698 39.625 49.625 C35.061 53.599 32.217 57.993 31 64 C30.869 66.937 30.788 69.851 30.762 72.789 C30.754 73.648 30.746 74.506 30.737 75.39 C30.723 77.208 30.713 79.025 30.705 80.842 C30.693 82.687 30.673 84.531 30.643 86.375 C30.278 109.115 30.278 109.115 38.062 117.562 C41.893 121.052 45.942 124.297 49.977 127.547 C53.19 130.154 56.349 132.818 59.5 135.5 C85.566 157.623 85.566 157.623 97.355 157.305 C105.396 156.378 110.914 152.657 116.668 147.195 C119.108 144.898 121.643 142.793 124.25 140.688 C128.937 136.884 133.561 133.016 138.146 129.091 C140.754 126.866 143.376 124.71 146.094 122.617 C154.055 116.475 158.61 111.099 160 101 C160.102 98.41 160.164 95.847 160.168 93.258 C160.171 92.531 160.175 91.803 160.178 91.054 C160.183 89.523 160.185 87.992 160.185 86.46 C160.187 84.139 160.206 81.818 160.225 79.496 C160.228 78 160.23 76.504 160.23 75.008 C160.234 74.666 160.234 74.666 160.252 72.936 C160.212 64.211 158.118 56.235 151.938 49.879 C133.666 32.984 133.666 32.984 124.75 32.688 C124.023 32.65 123.296 32.613 122.547 32.574 C116.101 33.652 111.116 38.361 106.375 42.562 C102.738 45.766 99.27 48.643 95 51 C94.31 50.432 93.621 49.863 92.91 49.277 C89.947 46.843 86.976 44.419 84 42 C83.156 41.312 82.311 40.623 81.441 39.914 C80.677 39.303 79.913 38.692 79.125 38.062 C78.447 37.517 77.769 36.972 77.07 36.41 C65.114 28.266 55.496 35.206 46.461 43.699 Z" fill="#000000" />
+          <path d="M0 0 C6.258 3.347 11.568 8.476 17 13 C11.109 18.965 4.941 24.643 -1.562 29.938 C-4 32 -4 32 -5 34 C-5.585 41.142 -5.585 41.142 -3.297 44.496 C-0.15 47.927 3.354 50.687 6.992 53.578 C8.993 55.189 10.958 56.846 12.883 58.547 C20.788 65.461 20.788 65.461 25.312 66.312 C31.918 65.753 36.533 60.832 41.375 56.625 C45.619 52.97 49.88 49.48 54.512 46.316 C57.206 43.934 57.938 41.581 58.312 38.062 C57.846 33.487 55.93 30.904 52.66 27.727 C51.803 27.033 50.946 26.34 50.062 25.625 C49.208 24.916 48.353 24.207 47.473 23.477 C45 22 45 22 42.855 22.145 C40.22 23.36 38.189 25.115 36 27 C37.151 30.453 38.321 31.381 41.062 33.688 C41.796 34.31 42.529 34.933 43.285 35.574 C43.851 36.045 44.417 36.515 45 37 C42.974 41.563 39.877 44.02 36.125 47.188 C35.812 47.46 35.812 47.46 34.23 48.842 C33.621 49.362 33.011 49.882 32.383 50.418 C31.83 50.89 31.277 51.362 30.708 51.848 C28.736 53.178 27.374 53.78 25 54 C23.308 53.044 23.308 53.044 21.652 51.543 C21.047 51.007 20.442 50.472 19.818 49.92 C19.198 49.348 18.577 48.777 17.938 48.188 C16.698 47.076 15.457 45.965 14.215 44.855 C13.669 44.357 13.124 43.858 12.562 43.344 C11 42 11 42 8 40 C8.226 36.311 8.907 35.094 11.555 32.422 C12.651 31.519 13.759 30.629 14.875 29.75 C15.168 29.511 15.168 29.511 16.65 28.303 C17.852 27.325 19.057 26.353 20.268 25.386 C22.741 23.407 25.18 21.389 27.625 19.375 C29.416 17.916 31.208 16.458 33 15 C34.938 13.417 36.876 11.834 38.812 10.25 C39.724 9.513 40.635 8.775 41.574 8.016 C42.989 6.84 44.381 5.634 45.707 4.359 C49.05 1.154 52.09 -0.116 56.641 -0.391 C61.425 0.402 64.541 3.817 68 7 C68.739 7.588 69.477 8.176 70.238 8.781 C74.684 12.358 77.224 15.487 79 21 C79.287 23.696 79.445 26.152 79.434 28.84 C79.439 29.566 79.444 30.291 79.449 31.039 C79.456 32.564 79.455 34.09 79.446 35.615 C79.438 37.928 79.466 40.239 79.498 42.553 C79.543 51.077 79.519 58.162 73.443 64.667 C71.67 66.351 69.837 67.899 67.938 69.438 C67.269 69.997 66.601 70.556 65.912 71.132 C63.952 72.768 61.977 74.385 60 76 C59.031 76.808 58.061 77.616 57.062 78.449 C54.396 80.66 51.703 82.834 49 85 C48.423 85.467 47.846 85.935 47.251 86.417 C45.381 87.93 43.504 89.435 41.625 90.938 C41.042 91.411 40.458 91.884 39.857 92.372 C34.629 96.519 30.85 98.185 24.16 98.363 C18.356 97.387 14.098 93.652 9.812 89.875 C8.663 88.882 7.514 87.89 6.363 86.898 C5.796 86.407 5.228 85.916 4.643 85.409 C2.296 83.397 -0.099 81.447 -2.5 79.5 C-6.662 76.102 -10.813 72.693 -14.938 69.25 C-15.481 68.802 -16.025 68.354 -16.586 67.893 C-20.717 64.426 -24.271 61.188 -26 56 C-26.133 53.266 -26.212 50.559 -26.238 47.824 C-26.246 47.021 -26.254 46.219 -26.263 45.392 C-26.277 43.693 -26.287 41.994 -26.295 40.295 C-26.312 37.707 -26.356 35.121 -26.4 32.533 C-26.411 30.88 -26.419 29.227 -26.426 27.574 C-26.443 26.805 -26.461 26.036 -26.479 25.244 C-26.455 19.217 -24.576 15.864 -20.508 11.341 C-20.051 10.924 -19.595 10.507 -19.125 10.078 C-18.87 9.844 -18.87 9.844 -17.578 8.66 C-17.057 8.195 -16.537 7.729 -16 7.25 C-15.479 6.769 -14.958 6.288 -14.422 5.793 C-9.712 1.523 -6.479 -0.778 0 0 Z" fill="#000000" transform="translate(69,46)" />
+        </svg>
+        <div style={{ color: "#fff", fontSize: "1.4rem", fontWeight: 700, letterSpacing: "-0.02em" }}>Legal Connect</div>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px" }}>Loading…</div>
+      </div>
+    );
+  }
+  if (!lcUser) {
+    setTimeout(() => navigate("/legal-connect"), 0);
+    return null;
+  }
+  return <Component />;
+}
+
+/** Guard: redirect to /mogambo if not logged in via Mogambo Google OAuth */
+function MogamboProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { mogamboUser, mogamboLoading } = useMogamboUser();
+  const [, navigate] = useLocation();
+  if (mogamboLoading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#f0f4f8" }}>
+        <div style={{ color: "#2a9d8f", fontSize: "14px" }}>Loading Mogambo…</div>
+      </div>
+    );
+  }
+  if (!mogamboUser) {
+    setTimeout(() => navigate("/mogambo"), 0);
+    return null;
+  }
+  return <Component />;
+}
+
+/** Guard: redirect to /gauge if not logged in via Gauge Google OAuth */
+function GaugeProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { gaugeUser, gaugeLoading } = useGaugeUser();
+  const [, navigate] = useLocation();
+
+  if (gaugeLoading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#302B2B" }}>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "14px" }}>Loading Gauge…</div>
+      </div>
+    );
+  }
+
+  if (!gaugeUser) {
+    setTimeout(() => navigate("/gauge"), 0);
+    return null;
+  }
+
+  return <Component />;
+}
+
+/** Guard: redirect to /querybee if not logged in via QB Google OAuth */
+function QbProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { qbUser, qbLoading } = useQbUser();
+  const [, navigate] = useLocation();
+
+  if (qbLoading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#0f1923" }}>
+        <div style={{ color: "#5eead4", fontSize: "14px" }}>Loading QueryBee…</div>
+      </div>
+    );
+  }
+
+  if (!qbUser) {
+    // Redirect to QB landing page
+    setTimeout(() => navigate("/querybee"), 0);
+    return null;
+  }
+
+  return <Component />;
+}
+
+function Router() {
+  // make sure to consider if you need authentication for certain routes
+  return (
+    <Switch>
+      <Route path={"/"} component={Home} />
+      <Route path={"/ledgerx"} component={LedgerXHome} />
+      <Route path={"/ledgerx/dashboard"} component={LedgerXDashboard} />
+      <Route path={"/ledgerx/invoice-booking"} component={InvoiceBooking} />
+      <Route path={"/ledgerx/dp-invoice-booking"} component={DPInvoiceBooking} />
+      <Route path={"/ledgerx/invoice-register"} component={InvoiceRegister} />
+      <Route path={"/ledgerx/tally-entry"} component={TallyEntry} />
+      <Route path={"/ledgerx/aging-analysis"} component={AgingAnalysis} />
+      <Route path={"/mogambo"} component={MogamboHome} />
+      <Route path={"/gauge"} component={GaugeLanding} />
+      <Route path={"/gauge/app"}>
+        <GaugeProtectedRoute component={GaugeApp} />
+      </Route>
+      <Route path={"/gauge/ticket/:ticketId"} component={GaugeTicketStandalone} />
+      <Route path={"/legal-connect"} component={LegalConnect} />
+      <Route path={"/legal-connect/dashboard"}>
+        <LcProtectedRoute component={LegalDashboard} />
+      </Route>
+      <Route path={"/querybee"} component={QueryBee} />
+      <Route path={"/querybee/dashboard"}>
+        <QbProtectedRoute component={QueryBeeDashboard} />
+      </Route>
+      <Route path={"/querybee/querypad"}>
+        <QbProtectedRoute component={QueryBeeDashboard} />
+      </Route>
+      <Route path={"/404"} component={NotFound} />
+      {/* Final fallback route */}
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+// NOTE: About Theme
+// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
+//   to keep consistent foreground/background color across components
+// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <ThemeProvider
+        defaultTheme="dark"
+        // switchable
+      >
+        <LcUserProvider>
+          <QbUserProvider>
+            <GaugeUserProvider>
+            <MogamboUserProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Router />
+              </TooltipProvider>
+            </MogamboUserProvider>
+            </GaugeUserProvider>
+          </QbUserProvider>
+        </LcUserProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
+  );
+}
+
+export default App;

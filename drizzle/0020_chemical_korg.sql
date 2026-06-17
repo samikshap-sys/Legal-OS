@@ -1,0 +1,1 @@
+ALTER TABLE `bq_load_jobs` MODIFY COLUMN `logs` text;
