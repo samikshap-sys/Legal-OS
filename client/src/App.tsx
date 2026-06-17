@@ -4,28 +4,10 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { QbUserProvider, useQbUser } from "./contexts/QbUserContext";
 import { LcUserProvider, useLcUser } from "./contexts/LcUserContext";
-import { MogamboUserProvider, useMogamboUser } from './contexts/MogamboUserContext';
-import { GaugeUserProvider, useGaugeUser } from './contexts/GaugeUserContext';
 import Home from "./pages/Home";
 import LegalConnect from "./pages/LegalConnect";
 import LegalDashboard from "./pages/LegalDashboard";
-import QueryBee from "./pages/QueryBee";
-import QueryBeeDashboard from "./pages/QueryBeeDashboard";
-import Querypad from "./pages/Querypad";
-import LedgerXHome from "./pages/LedgerXHome";
-import LedgerXDashboard from "./pages/LedgerXDashboard";
-import InvoiceBooking from "./pages/InvoiceBooking";
-
-import InvoiceRegister from "./pages/InvoiceRegister";
-import TallyEntry from "./pages/TallyEntry";
-import AgingAnalysis from "./pages/AgingAnalysis";
-import DPInvoiceBooking from "./pages/DPInvoiceBooking";
-import MogamboHome from "./pages/mogambo/MogamboHome";
-import GaugeLanding from "./pages/GaugeLanding";
-import GaugeApp from "./pages/GaugeApp";
-import GaugeTicketStandalone from "./pages/gauge/GaugeTicketStandalone";
 
 /** Guard: redirect to /legal-connect if not logged in via LC Google OAuth */
 function LcProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -50,95 +32,13 @@ function LcProtectedRoute({ component: Component }: { component: React.Component
   return <Component />;
 }
 
-/** Guard: redirect to /mogambo if not logged in via Mogambo Google OAuth */
-function MogamboProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { mogamboUser, mogamboLoading } = useMogamboUser();
-  const [, navigate] = useLocation();
-  if (mogamboLoading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#f0f4f8" }}>
-        <div style={{ color: "#2a9d8f", fontSize: "14px" }}>Loading Mogambo…</div>
-      </div>
-    );
-  }
-  if (!mogamboUser) {
-    setTimeout(() => navigate("/mogambo"), 0);
-    return null;
-  }
-  return <Component />;
-}
-
-/** Guard: redirect to /gauge if not logged in via Gauge Google OAuth */
-function GaugeProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { gaugeUser, gaugeLoading } = useGaugeUser();
-  const [, navigate] = useLocation();
-
-  if (gaugeLoading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#302B2B" }}>
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "14px" }}>Loading Gauge…</div>
-      </div>
-    );
-  }
-
-  if (!gaugeUser) {
-    setTimeout(() => navigate("/gauge"), 0);
-    return null;
-  }
-
-  return <Component />;
-}
-
-/** Guard: redirect to /querybee if not logged in via QB Google OAuth */
-function QbProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { qbUser, qbLoading } = useQbUser();
-  const [, navigate] = useLocation();
-
-  if (qbLoading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#0f1923" }}>
-        <div style={{ color: "#5eead4", fontSize: "14px" }}>Loading QueryBee…</div>
-      </div>
-    );
-  }
-
-  if (!qbUser) {
-    // Redirect to QB landing page
-    setTimeout(() => navigate("/querybee"), 0);
-    return null;
-  }
-
-  return <Component />;
-}
-
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
-      <Route path={"/ledgerx"} component={LedgerXHome} />
-      <Route path={"/ledgerx/dashboard"} component={LedgerXDashboard} />
-      <Route path={"/ledgerx/invoice-booking"} component={InvoiceBooking} />
-      <Route path={"/ledgerx/dp-invoice-booking"} component={DPInvoiceBooking} />
-      <Route path={"/ledgerx/invoice-register"} component={InvoiceRegister} />
-      <Route path={"/ledgerx/tally-entry"} component={TallyEntry} />
-      <Route path={"/ledgerx/aging-analysis"} component={AgingAnalysis} />
-      <Route path={"/mogambo"} component={MogamboHome} />
-      <Route path={"/gauge"} component={GaugeLanding} />
-      <Route path={"/gauge/app"}>
-        <GaugeProtectedRoute component={GaugeApp} />
-      </Route>
-      <Route path={"/gauge/ticket/:ticketId"} component={GaugeTicketStandalone} />
       <Route path={"/legal-connect"} component={LegalConnect} />
       <Route path={"/legal-connect/dashboard"}>
         <LcProtectedRoute component={LegalDashboard} />
-      </Route>
-      <Route path={"/querybee"} component={QueryBee} />
-      <Route path={"/querybee/dashboard"}>
-        <QbProtectedRoute component={QueryBeeDashboard} />
-      </Route>
-      <Route path={"/querybee/querypad"}>
-        <QbProtectedRoute component={QueryBeeDashboard} />
       </Route>
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
@@ -147,29 +47,15 @@ function Router() {
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="dark"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="dark">
         <LcUserProvider>
-          <QbUserProvider>
-            <GaugeUserProvider>
-            <MogamboUserProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Router />
-              </TooltipProvider>
-            </MogamboUserProvider>
-            </GaugeUserProvider>
-          </QbUserProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
         </LcUserProvider>
       </ThemeProvider>
     </ErrorBoundary>

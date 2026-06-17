@@ -99,30 +99,6 @@ export default function Home() {
         {/* App cards */}
         <div className="app-grid">
 
-          {/* LedgerX */}
-          <Link className="app-card ledgerx" href="/ledgerx">
-            <div className="app-icon ledger-icon">
-              <svg viewBox="0 0 64 64" fill="none" style={{width: "36px", height: "36px"}}>
-                {/* Ledger / invoice icon */}
-                <rect x="12" y="8" width="32" height="40" rx="4" fill="white" fillOpacity="0.12"/>
-                <rect x="16" y="14" width="20" height="2.5" rx="1.25" fill="white" fillOpacity="0.85"/>
-                <rect x="16" y="20" width="24" height="2.5" rx="1.25" fill="white" fillOpacity="0.7"/>
-                <rect x="16" y="26" width="18" height="2.5" rx="1.25" fill="white" fillOpacity="0.55"/>
-                <rect x="16" y="32" width="22" height="2.5" rx="1.25" fill="white" fillOpacity="0.7"/>
-                <path d="M36 38 L44 46" stroke="#f5c518" strokeWidth="3" strokeLinecap="round"/>
-                <circle cx="44" cy="46" r="6" fill="none" stroke="#f5c518" strokeWidth="2.5"/>
-                <path d="M41 46 L43 48 L47 44" stroke="#f5c518" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <div className="app-info">
-              <div className="app-name">LedgerX <span className="badge ap">AP</span></div>
-              <div className="app-desc">Accounts Payable · Invoice Management</div>
-            </div>
-            <svg className="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </Link>
-
           {/* Legal Connect */}
           <Link className="app-card legal" href="/legal-connect">
             <div className="app-icon legal-icon">
@@ -141,74 +117,6 @@ export default function Home() {
             <div className="app-info">
               <div className="app-name">Legal Connect <span className="badge legal-b">Legal</span></div>
               <div className="app-desc">Contracts · Agreements · Compliance</div>
-            </div>
-            <svg className="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </Link>
-
-          {/* QueryBee */}
-          <Link className="app-card querybee" href="/querybee">
-            <div className="app-icon qb-icon">
-              <svg viewBox="0 0 64 64" fill="none" style={{width: "36px", height: "36px"}}>
-                <path d="M32 4 L56 18 L56 46 L32 60 L8 46 L8 18 Z" fill="white" fillOpacity="0.12"/>
-                <path d="M32 10 L52 22 L52 44 L32 56 L12 44 L12 22 Z" fill="white" fillOpacity="0.08"/>
-                <path d="M18 24 L26 32 L18 40" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                <rect x="30" y="24" width="16" height="3.5" rx="1.75" fill="white" fillOpacity="0.9"/>
-                <rect x="30" y="31" width="11" height="3.5" rx="1.75" fill="white" fillOpacity="0.6"/>
-                <rect x="30" y="38" width="14" height="3.5" rx="1.75" fill="white" fillOpacity="0.75"/>
-                <circle cx="50" cy="12" r="4" fill="#f5c518" opacity="0.9"/>
-                <ellipse cx="52" cy="10" rx="2.5" ry="1.5" fill="white" fillOpacity="0.6" transform="rotate(-30 52 10)"/>
-              </svg>
-            </div>
-            <div className="app-info">
-              <div className="app-name">QueryBee <span className="badge bq">BQ</span></div>
-              <div className="app-desc">BigQuery · Data Explorer · Analytics</div>
-            </div>
-            <svg className="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </Link>
-
-          {/* Mogambo */}
-          <Link className="app-card mogambo" href="/mogambo">
-            <div className="app-icon mogambo-icon">
-              <img
-                src="/manus-storage/mogambo-bot-logo_c4de0b99.png"
-                alt="Mogambo"
-                style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '8px' }}
-              />
-            </div>
-            <div className="app-info">
-              <div className="app-name">Mogambo <span className="badge mogambo-b">AI</span></div>
-              <div className="app-desc">Kaily AI · Slack Assistant · Chat</div>
-            </div>
-            <svg className="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </Link>
-
-          {/* Gauge */}
-          <Link className="app-card gauge" href="/gauge">
-            <div className="app-icon gauge-icon">
-              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width: "28px", height: "28px"}}>
-                {/* Gauge arc — full background */}
-                <path d="M5.1 22.5 A13 13 0 1 1 26.9 22.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.25"/>
-                {/* Gauge arc — active portion (left half) */}
-                <path d="M5.1 22.5 A13 13 0 0 1 16 3" stroke="white" strokeWidth="2.2" strokeLinecap="round" fill="none"/>
-                {/* Needle */}
-                <line x1="16" y1="16" x2="10.5" y2="8.5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                {/* Center dot */}
-                <circle cx="16" cy="16" r="2.5" fill="white"/>
-                {/* Tick marks */}
-                <line x1="16" y1="4" x2="16" y2="6.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.55"/>
-                <line x1="6" y1="21.5" x2="8.2" y2="20.3" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.55"/>
-                <line x1="26" y1="21.5" x2="23.8" y2="20.3" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.55"/>
-              </svg>
-            </div>
-            <div className="app-info">
-              <div className="app-name">Gauge <span className="badge gauge-b">Tickets</span></div>
-              <div className="app-desc">Requests · DRI Tracking · Resolution</div>
             </div>
             <svg className="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 18l6-6-6-6"/>
