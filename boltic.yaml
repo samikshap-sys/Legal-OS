@@ -1,0 +1,15 @@
+app: "legal-os"
+primary_region: "asia-south1"
+
+build:
+  language: "nodejs/22"
+  ignorefile: ".gitignore"
+
+env:
+  NODE_ENV: "production"
+
+resources:
+  cpu_kind: "shared"
+  cpus: 0.5
+  memory: "512"
+  max_memory: "1024"
