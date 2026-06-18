@@ -2,7 +2,7 @@ app: "legal-os"
 primary_region: "asia-south1"
 
 build:
-  language: "nodejs/22"
+  dockerfile: "Dockerfile"
   ignorefile: ".gitignore"
 
 env:
