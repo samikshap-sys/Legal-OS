@@ -98,7 +98,7 @@ export default function LegalConnect() {
       navigate("/legal-connect/dashboard");
     } else {
       const origin = window.location.origin;
-      window.location.href = `/api/qb/auth/google?origin=${encodeURIComponent(origin)}&flow=lc`;
+      window.location.href = `/api/lc/auth/google?origin=${encodeURIComponent(origin)}`;
     }
   }
 
