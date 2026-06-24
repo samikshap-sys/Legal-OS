@@ -7,7 +7,7 @@
 import React, { useEffect, useState } from "react";
 // PDF generation is now server-side via /api/lc/pdf/dashboard
 import "../legal-dashboard.css";
-import { trpc } from "@/lib/trpc";
+import { trpc } from "@/lib/trpc"
 import { useLcUser } from "@/contexts/LcUserContext";
 import { FyndHeartIcon } from "./LegalConnect";
 import {
@@ -25,6 +25,13 @@ import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Bar, Doughnut } from "react-chartjs-2";
 import { Link } from "wouter";
 import LegalUserManagement from "./LegalUserManagement";
+
+function getDriveImageUrl(url: string): string {
+  if (!url) return '';
+  const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w120`;
+  return url;
+}
 
 ChartJS.register(
   ArcElement, BarElement, CategoryScale, LinearScale,
@@ -778,7 +785,7 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
                               src={row['Trademark Image']}
                               alt={row['Trademark Name'] || 'TM'}
                               style={{ maxHeight: 40, maxWidth: 80, objectFit: 'contain', display: 'block', margin: '0 auto' }}
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+     src={getDriveImageUrl(row['Trademark Image'])}rror={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                             />
                           ) : <span style={{ color: '#9aa0ab', fontSize: '0.8rem' }}>No image</span>}
                         </td>
