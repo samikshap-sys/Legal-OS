@@ -782,10 +782,10 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
                         <td style={{ textAlign: 'center', minWidth: 90 }}>
                           {row['Trademark Image'] ? (
                             <img
-                              src={row['Trademark Image']}
+                              src={getDriveImageUrl(row['Trademark Image'])}
                               alt={row['Trademark Name'] || 'TM'}
                               style={{ maxHeight: 40, maxWidth: 80, objectFit: 'contain', display: 'block', margin: '0 auto' }}
-     src={getDriveImageUrl(row['Trademark Image'])}rror={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                             />
                           ) : <span style={{ color: '#9aa0ab', fontSize: '0.8rem' }}>No image</span>}
                         </td>

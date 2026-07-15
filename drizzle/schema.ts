@@ -1,49 +1,52 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { integer, pgEnum, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+
+export const roleEnum = pgEnum("role", ["user", "admin"]);
 
 /**
  * Core user table backing auth flow.
  */
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  role: roleEnum("role").default("user").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 // ── Legal Connect Google OAuth sessions ──────────────────────────────────────
-export const lcSessions = mysqlTable("lc_sessions", {
+export const lcSessions = pgTable("lc_sessions", {
   id: varchar("id", { length: 64 }).primaryKey(),
   email: varchar("email", { length: 320 }).notNull(),
   name: varchar("name", { length: 255 }).notNull().default(""),
   googleId: varchar("googleId", { length: 128 }).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  sessionToken: varchar("session_token", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   expiresAt: timestamp("expiresAt").notNull(),
 });
 export type LcSession = typeof lcSessions.$inferSelect;
 export type InsertLcSession = typeof lcSessions.$inferInsert;
 
 // ── Legal Connect User Scopes ─────────────────────────────────────────────────
-export const lcUserScopes = mysqlTable("lc_user_scopes", {
-  id: int("id").autoincrement().primaryKey(),
+export const lcUserScopes = pgTable("lc_user_scopes", {
+  id: serial("id").primaryKey(),
   email: varchar("email", { length: 320 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull().default(""),
   scopes: text("scopes"),
   assignedBy: varchar("assignedBy", { length: 320 }).notNull().default(""),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
 });
 export type LcUserScope = typeof lcUserScopes.$inferSelect;
 export type InsertLcUserScope = typeof lcUserScopes.$inferInsert;
 
 // ── Legal Connect Requests ────────────────────────────────────────────────────
-export const lcRequests = mysqlTable("lc_requests", {
+export const lcRequests = pgTable("lc_requests", {
   request_id:        varchar("request_id",        { length: 32  }).primaryKey(),
   requester_name:    varchar("requester_name",    { length: 255 }).notNull().default(""),
   requester_email:   varchar("requester_email",   { length: 320 }).notNull().default(""),
@@ -64,7 +67,7 @@ export const lcRequests = mysqlTable("lc_requests", {
   history_json:      text("history_json"),
   status_updated_by: varchar("status_updated_by", { length: 320 }).notNull().default(""),
   requested_by:      varchar("requested_by",      { length: 320 }).notNull().default(""),
-  is_confidential:   int("is_confidential").notNull().default(0),
+  is_confidential:   integer("is_confidential").notNull().default(0),
   submitted_at:      varchar("submitted_at",      { length: 64  }).notNull().default(""),
   updated_at:        varchar("updated_at",        { length: 64  }).notNull().default(""),
 });

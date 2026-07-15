@@ -132,13 +132,15 @@ lcAuthRouter.get("/callback", async (req: Request, res: Response) => {
       .sign(getSecret());
     // Persist session to DB
     const db = await getDb();
+    const sessionToken = randomUUID();
     await db!.insert(lcSessions).values({
       id: sessionId,
       email,
       name,
       googleId,
+      sessionToken,
       expiresAt,
-    }).onDuplicateKeyUpdate({ set: { email, name, expiresAt } });
+    }).onConflictDoUpdate({ target: lcSessions.id, set: { email, name, expiresAt, sessionToken } });
     // Set cookie
     res.cookie(LC_COOKIE, jwt, {
       httpOnly: true,
