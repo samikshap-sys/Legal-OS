@@ -39,7 +39,7 @@ ChartJS.register(
 );
 
 // ── Sidebar nav items ──────────────────────────────────────────────────────
-type Page = "dashboard" | "tracker" | "requests" | "workflows" | "team" | "templates" | "requests-logs" | "user-management";
+type Page = "dashboard" | "tracker" | "requests" | "workflows" | "team" | "templates" | "requests-logs" | "fynds-ipr" | "user-management";
 
 // Admin emails — only these users can update status and delete workflow cards
 const LC_ADMIN_EMAILS = new Set([
@@ -413,9 +413,6 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
   const { data: regionData } = trpc.legal.chartRegionStatus.useQuery();
   const { data: recent }     = trpc.legal.recent.useQuery();
   const { data: disputeData } = trpc.legal.disputeTrackerCharts.useQuery();
-  const { data: tmRows }       = trpc.legal.tmSheetRows.useQuery();
-  const [tmPage, setTmPage] = useState(1);
-  const TM_PAGE_SIZE = 7;
   const [refreshing, setRefreshing] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
 
@@ -669,6 +666,25 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
 
       {/* Requests by Document Type chart removed per user request */}
 
+      {/* ── Dispute & Litigation Tracker Charts ──────────────────────── */}
+      <DisputeTrackerSection data={disputeData} />
+    </div>
+  );
+}
+
+// ── Fynd's IPR page (Trade Mark Sheet, moved off the Dashboard) ────────────
+function IPRPage() {
+  const { data: tmRows } = trpc.legal.tmSheetRows.useQuery();
+  const [tmPage, setTmPage] = useState(1);
+  const TM_PAGE_SIZE = 7;
+
+  return (
+    <div className="lc-pg-content">
+      {/* Page header */}
+      <div className="lc-ph-row">
+        <h1 className="lc-ph-h">Fynd's IPR</h1>
+      </div>
+
       {/* ── Trademark Sheet Table ─────────────────────────────────────── */}
       <div className="lc-card" style={{ marginBottom: "1.5rem", overflowX: "auto" }}>
         <div className="lc-card-hd">
@@ -744,9 +760,6 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
           );
         })()}
       </div>
-
-      {/* ── Dispute & Litigation Tracker Charts ──────────────────────── */}
-      <DisputeTrackerSection data={disputeData} />
     </div>
   );
 }
@@ -2589,6 +2602,7 @@ export default function LegalDashboard() {
     team:            <TeamPage />,
     templates:       <TemplatesPage />,
     "requests-logs": <RequestsLogsPage />,
+    "fynds-ipr":     <IPRPage />,
     "user-management": <LegalUserManagement />,
   };
 
@@ -2652,6 +2666,15 @@ export default function LegalDashboard() {
           >
             <i className="fa-solid fa-clipboard-list"></i>
             <span>Request Logs</span>
+          </button>
+          {/* Fynd's IPR */}
+          <button
+            className={`lc-sbi${activePage === "fynds-ipr" ? " active" : ""}`}
+            onClick={() => setActivePage("fynds-ipr")}
+            title="Fynd's IPR"
+          >
+            <i className="fa-solid fa-registered"></i>
+            <span>Fynd's IPR</span>
           </button>
           {/* Team — last (informational, not operational) */}
           {hasScope("team") && (
