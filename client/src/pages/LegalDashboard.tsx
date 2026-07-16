@@ -39,7 +39,7 @@ ChartJS.register(
 );
 
 // ── Sidebar nav items ──────────────────────────────────────────────────────
-type Page = "dashboard" | "tracker" | "requests" | "workflows" | "team" | "templates" | "requests-logs" | "fynds-ipr" | "user-management";
+type Page = "dashboard" | "tracker" | "requests" | "workflows" | "team" | "templates" | "requests-logs" | "fynds-ipr" | "litigation" | "user-management";
 
 // Admin emails — only these users can update status and delete workflow cards
 const LC_ADMIN_EMAILS = new Set([
@@ -504,6 +504,129 @@ function IPRPage() {
             </>
           );
         })()}
+      </div>
+    </div>
+  );
+}
+
+// ── Litigation page (Claims By Fynd / Claims Against Fynd) ─────────────────
+const LIT_KNOWN_STATUSES = new Set([
+  'closed', 'partial-recovery', 'under-discussion', 'arbitration-initiated',
+  'demand-notice-sent', 'negotiation', '1st-reply-to-notice', '2nd-reply-to-notice', '3rd-reply-to-notice',
+]);
+
+function LitStatusPill({ status }: { status: string }) {
+  if (!status) return <span style={{ color: '#9aa0ab' }}>—</span>;
+  const slug = status.toLowerCase().trim().replace(/\s+/g, '-');
+  const cls = LIT_KNOWN_STATUSES.has(slug) ? `lit-status-${slug}` : 'lit-status-default';
+  return <span className={`lit-status-pill ${cls}`}>{status}</span>;
+}
+
+function LitigationPage() {
+  const { data: byFyndRows }      = trpc.legal.claimsByFyndRows.useQuery();
+  const { data: againstFyndRows } = trpc.legal.claimsAgainstFyndRows.useQuery();
+
+  return (
+    <div className="lc-pg-content">
+      {/* Page header */}
+      <div className="lc-ph-row">
+        <h1 className="lc-ph-h">Litigation</h1>
+      </div>
+
+      {/* ── Claims By Fynd ───────────────────────────────────────────── */}
+      <div className="lc-card" style={{ marginBottom: "1.5rem", overflowX: "auto" }}>
+        <div className="lc-card-hd">
+          <span className="lc-card-title">Claims By Fynd</span>
+          {byFyndRows && <span className="lc-chip">{byFyndRows.length} CLAIMS</span>}
+        </div>
+        <div className="lc-card-sub">Claims raised by Fynd against counterparties</div>
+        {!byFyndRows ? (
+          <div className="lc-loading">Loading…</div>
+        ) : byFyndRows.length === 0 ? (
+          <div style={{ color: '#9aa0ab', fontSize: '0.85rem', padding: '1rem 0' }}>No claims on record.</div>
+        ) : (
+          <div style={{ overflowX: "auto", marginTop: "0.75rem" }}>
+            <table className="tm-sheet-table">
+              <thead>
+                <tr>
+                  <th>Company Name</th>
+                  <th>Date of Default</th>
+                  <th>Cause of Action</th>
+                  <th>Net Recoverable Amount</th>
+                  <th>Matter Handled by</th>
+                  <th>Contract Termination Date</th>
+                  <th>Demand Notice Date</th>
+                  <th>Legal Notice Date</th>
+                  <th>Arbitration Notice Date</th>
+                  <th>Ageing (Days)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {byFyndRows.map((row, i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight: 600 }}>{row['Company Name'] || '—'}</td>
+                    <td>{row['Date of Default'] || '—'}</td>
+                    <td>{row['Cause of Action'] || '—'}</td>
+                    <td style={{ fontWeight: 500, color: '#1C1C1E' }}>{row['Net Recoverable Amount'] || '—'}</td>
+                    <td>{row['Matter Handled by'] || '—'}</td>
+                    <td>{row['Contract Termination Date'] || '—'}</td>
+                    <td>{row['Demand Notice Date'] || '—'}</td>
+                    <td>{row['Legal Notice Date'] || '—'}</td>
+                    <td>{row['Arbitration Notice Date'] || '—'}</td>
+                    <td>{row['Ageing Analysis'] || '—'}</td>
+                    <td><LitStatusPill status={row['Status']} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ── Claims Against Fynd ──────────────────────────────────────── */}
+      <div className="lc-card" style={{ overflowX: "auto" }}>
+        <div className="lc-card-hd">
+          <span className="lc-card-title">Claims Against Fynd</span>
+          {againstFyndRows && <span className="lc-chip">{againstFyndRows.length} CLAIMS</span>}
+        </div>
+        <div className="lc-card-sub">Claims raised against Fynd by counterparties</div>
+        {!againstFyndRows ? (
+          <div className="lc-loading">Loading…</div>
+        ) : againstFyndRows.length === 0 ? (
+          <div style={{ color: '#9aa0ab', fontSize: '0.85rem', padding: '1rem 0' }}>No claims on record.</div>
+        ) : (
+          <div style={{ overflowX: "auto", marginTop: "0.75rem" }}>
+            <table className="tm-sheet-table">
+              <thead>
+                <tr>
+                  <th>Company Name</th>
+                  <th>Amount in Dispute</th>
+                  <th>Cause of Action</th>
+                  <th>Account Manager</th>
+                  <th>Matter Handled By</th>
+                  <th>Notice Received On</th>
+                  <th>Arbitration Notice Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {againstFyndRows.map((row, i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight: 600 }}>{row['Company Name'] || '—'}</td>
+                    <td style={{ fontWeight: 500, color: '#1C1C1E' }}>{row['Amount in Dispute'] || '—'}</td>
+                    <td>{row['Cause of Action'] || '—'}</td>
+                    <td>{row['Account Manager'] || '—'}</td>
+                    <td>{row['Matter Handled By'] || '—'}</td>
+                    <td>{row['Notice Received On'] || '—'}</td>
+                    <td>{row['Arbitration Notice Date'] || '—'}</td>
+                    <td><LitStatusPill status={row['Status']} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2348,6 +2471,7 @@ export default function LegalDashboard() {
     templates:       <TemplatesPage />,
     "requests-logs": <RequestsLogsPage />,
     "fynds-ipr":     <IPRPage />,
+    litigation:      <LitigationPage />,
     "user-management": <LegalUserManagement />,
   };
 
@@ -2420,6 +2544,15 @@ export default function LegalDashboard() {
           >
             <i className="fa-solid fa-registered"></i>
             <span>Fynd's IPR</span>
+          </button>
+          {/* Litigation */}
+          <button
+            className={`lc-sbi${activePage === "litigation" ? " active" : ""}`}
+            onClick={() => setActivePage("litigation")}
+            title="Litigation"
+          >
+            <i className="fa-solid fa-gavel"></i>
+            <span>Litigation</span>
           </button>
           {/* Team — last (informational, not operational) */}
           {hasScope("team") && (

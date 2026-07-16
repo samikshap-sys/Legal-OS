@@ -1612,3 +1612,25 @@ input.fsel:focus { border-color: rgba(241,90,41,0.5); box-shadow: 0 0 0 3px rgba
 .tm-status-abandoned    { background: #fee2e2; color: #991b1b; }
 .tm-status-objected     { background: #fde8d8; color: #c2410c; }
 .tm-status-opposed      { background: #ede9fe; color: #5b21b6; }
+
+/* ── Litigation Sheet Tables ─────────────────────────────────────────── */
+.lit-status-pill {
+  display: inline-block;
+  padding: 0.18rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.lit-status-closed                 { background: #d1fae5; color: #065f46; }
+.lit-status-partial-recovery       { background: #fef3c7; color: #92400e; }
+.lit-status-under-discussion       { background: #fde8d8; color: #c2410c; }
+.lit-status-arbitration-initiated  { background: #ede9fe; color: #5b21b6; }
+.lit-status-demand-notice-sent     { background: #e5e7eb; color: #1c1c1e; }
+.lit-status-negotiation            { background: #dbeafe; color: #1e40af; }
+.lit-status-1st-reply-to-notice    { background: #cffafe; color: #155e75; }
+.lit-status-2nd-reply-to-notice    { background: #e0f2fe; color: #075985; }
+.lit-status-3rd-reply-to-notice    { background: #e0e7ff; color: #3730a3; }
+.lit-status-default                { background: #f3f4f6; color: #6b7280; }

@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { publicProcedure, router } from './_core/trpc';
 import { getSheetData, normalizeStatus, getSheetLastFetched } from './legalSheets';
-import { getDisputeChartData, getTMSheetRows } from './disputeSheets';
+import { getDisputeChartData, getTMSheetRows, getClaimsByFyndRows, getClaimsAgainstFyndRows } from './disputeSheets';
 import { getRequests, insertRequest, patchRequest, deleteRequest, updateFullRequest } from './legalBigQuery';
 import { getLcUser } from './lcAuthRouter';
 import { storageGetSignedUrl } from './storage';
@@ -475,6 +475,55 @@ export const legalRouter = router({
       const out: Record<string, string> = {};
       for (const col of TM_COLUMNS) {
         // flexible key match
+        const key = Object.keys(row).find(k => k.toLowerCase().replace(/[^a-z0-9]/g,'').includes(col.toLowerCase().replace(/[^a-z0-9]/g,'')));
+        out[col] = key ? (row[key] || '') : '';
+      }
+      return out;
+    });
+  }),
+
+  /** Raw "Claims By Fynd" sheet rows for the Litigation tab */
+  claimsByFyndRows: publicProcedure.query(async () => {
+    const COLUMNS = [
+      'Company Name',
+      'Date of Default',
+      'Cause of Action',
+      'Net Recoverable Amount',
+      'Matter Handled by',
+      'Contract Termination Date',
+      'Demand Notice Date',
+      'Legal Notice Date',
+      'Arbitration Notice Date',
+      'Ageing Analysis',
+      'Status',
+    ];
+    const rows = await getClaimsByFyndRows();
+    return rows.map(row => {
+      const out: Record<string, string> = {};
+      for (const col of COLUMNS) {
+        const key = Object.keys(row).find(k => k.toLowerCase().replace(/[^a-z0-9]/g,'').includes(col.toLowerCase().replace(/[^a-z0-9]/g,'')));
+        out[col] = key ? (row[key] || '') : '';
+      }
+      return out;
+    });
+  }),
+
+  /** Raw "Claims Against Fynd" sheet rows for the Litigation tab */
+  claimsAgainstFyndRows: publicProcedure.query(async () => {
+    const COLUMNS = [
+      'Company Name',
+      'Amount in Dispute',
+      'Cause of Action',
+      'Account Manager',
+      'Matter Handled By',
+      'Notice Received On',
+      'Arbitration Notice Date',
+      'Status',
+    ];
+    const rows = await getClaimsAgainstFyndRows();
+    return rows.map(row => {
+      const out: Record<string, string> = {};
+      for (const col of COLUMNS) {
         const key = Object.keys(row).find(k => k.toLowerCase().replace(/[^a-z0-9]/g,'').includes(col.toLowerCase().replace(/[^a-z0-9]/g,'')));
         out[col] = key ? (row[key] || '') : '';
       }

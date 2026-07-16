@@ -124,6 +124,31 @@ export async function getTMSheetRows(): Promise<Record<string, string>[]> {
   return rows;
 }
 
+// ── Raw Claims By Fynd / Claims Against Fynd rows (for Litigation tab) ────────
+let cachedClaimsByFynd: Record<string, string>[] | null = null;
+let claimsByFyndCacheExpiry = 0;
+
+export async function getClaimsByFyndRows(): Promise<Record<string, string>[]> {
+  const now = Date.now();
+  if (cachedClaimsByFynd && now < claimsByFyndCacheExpiry) return cachedClaimsByFynd;
+  const rows = await fetchSheet('Claims By Fynd');
+  cachedClaimsByFynd = rows;
+  claimsByFyndCacheExpiry = now + CACHE_TTL_MS;
+  return rows;
+}
+
+let cachedClaimsAgainstFynd: Record<string, string>[] | null = null;
+let claimsAgainstFyndCacheExpiry = 0;
+
+export async function getClaimsAgainstFyndRows(): Promise<Record<string, string>[]> {
+  const now = Date.now();
+  if (cachedClaimsAgainstFynd && now < claimsAgainstFyndCacheExpiry) return cachedClaimsAgainstFynd;
+  const rows = await fetchSheet('Claims Against Fynd');
+  cachedClaimsAgainstFynd = rows;
+  claimsAgainstFyndCacheExpiry = now + CACHE_TTL_MS;
+  return rows;
+}
+
 export async function getDisputeChartData(): Promise<DisputeChartData> {
   const now = Date.now();
   if (cachedData && now < cacheExpiry) return cachedData;
