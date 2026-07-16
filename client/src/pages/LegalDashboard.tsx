@@ -197,7 +197,7 @@ function DisputeTrackerSection({ data }: { data?: DisputeChartData }) {
     );
   }
 
-  const { fyndVsOther, otherVsFynd, registeredTM, inProcessTM } = data;
+  const { fyndVsOther, otherVsFynd } = data;
 
   // ── Shared chart options ─────────────────────────────────────────────────
   const doughnutOpts: any = {
@@ -340,32 +340,6 @@ function DisputeTrackerSection({ data }: { data?: DisputeChartData }) {
     datasets: [{ label: "Cases", data: otherCauseEntries.map(([, v]) => v), backgroundColor: [CHART_COLORS.orange, CHART_COLORS.dark], borderRadius: 5, barThickness: 36 }],
   };
 
-  // ── Registered TM ────────────────────────────────────────────────────────
-  const regNatureDonut = toDoughnutData(registeredTM.byNature, [CHART_COLORS.orange, CHART_COLORS.dark, CHART_COLORS.amber]);
-  const regClassEntries = toBarData(registeredTM.byClass);
-  const regClassBar = {
-    labels: regClassEntries.map(([k]) => `Class ${k}`),
-    datasets: [{ label: "TMs", data: regClassEntries.map(([, v]) => v), backgroundColor: OB_PALETTE.slice(0, regClassEntries.length), borderRadius: 5, barThickness: 36 }],
-  };
-  const regNameEntries = toBarData(registeredTM.byName, 10);
-  const regNameBar = {
-    labels: regNameEntries.map(([k]) => k),
-    datasets: [{ label: "Registrations", data: regNameEntries.map(([, v]) => v), backgroundColor: multiColors(regNameEntries.length), borderRadius: 5, barThickness: 22 }],
-  };
-
-  // ── In Process TM ────────────────────────────────────────────────────────
-  const ipStatusDonut = toDoughnutData(inProcessTM.byStatus, [CHART_COLORS.amber, CHART_COLORS.orange, CHART_COLORS.red, CHART_COLORS.dark]);
-  const ipNatureDonut = toDoughnutData(inProcessTM.byNature, [CHART_COLORS.dark, CHART_COLORS.orange]);
-  const ipClassEntries = toBarData(inProcessTM.byClass);
-  const ipClassBar = {
-    labels: ipClassEntries.map(([k]) => `Class ${k}`),
-    datasets: [{ label: "TMs", data: ipClassEntries.map(([, v]) => v), backgroundColor: OB_PALETTE.slice(0, ipClassEntries.length), borderRadius: 5, barThickness: 32 }],
-  };
-  const ipNameEntries = toBarData(inProcessTM.byName, 10);
-  const ipNameBar = {
-    labels: ipNameEntries.map(([k]) => k),
-    datasets: [{ label: "Applications", data: ipNameEntries.map(([, v]) => v), backgroundColor: multiColors(ipNameEntries.length), borderRadius: 5, barThickness: 22 }],
-  };
 
   const litigationHd: React.CSSProperties = {
     fontSize: "1.05rem", fontWeight: 700, color: "#1C1C1E",
@@ -424,57 +398,6 @@ function DisputeTrackerSection({ data }: { data?: DisputeChartData }) {
               ? <Bar data={otherCauseBar} options={hBarOpts} />
               : <div style={{ color: "#9aa0ab", fontSize: "0.9rem", padding: "1rem" }}>No data</div>
             }
-          </div>
-        </SmallCard>
-      </div>
-
-      {/* ── Section: Registered TM ────────────────────────────────────── */}
-      <p style={sectionHd}>Registered Trademarks — {registeredTM.totalRows} registrations</p>
-      <div style={twoCol}>
-        <SmallCard title="By Nature" chip={`${registeredTM.totalRows} TMs`}>
-          <div style={{ height: 240, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Doughnut data={regNatureDonut} options={doughnutOpts} />
-          </div>
-        </SmallCard>
-        <SmallCard title="By Class">
-          <div style={{ height: 240 }}>
-            <Bar data={regClassBar} options={vBarOpts} />
-          </div>
-        </SmallCard>
-      </div>
-      <div style={twoCol}>
-        <SmallCard title="By Trademark Name">
-          <div style={{ height: 280 }}>
-            <Bar data={regNameBar} options={hBarOpts} />
-          </div>
-        </SmallCard>
-        {/* Spacer — only 3 charts for registered TM */}
-        <div />
-      </div>
-
-      {/* ── Section: In Process TM ────────────────────────────────────── */}
-      <p style={sectionHd}>In-Process Trademarks — {inProcessTM.totalRows} applications</p>
-      <div style={twoCol}>
-        <SmallCard title="Application Status" chip={`${inProcessTM.totalRows} APPS`}>
-          <div style={{ height: 240, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Doughnut data={ipStatusDonut} options={doughnutOpts} />
-          </div>
-        </SmallCard>
-        <SmallCard title="By Nature">
-          <div style={{ height: 240, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Doughnut data={ipNatureDonut} options={doughnutOpts} />
-          </div>
-        </SmallCard>
-      </div>
-      <div style={twoCol}>
-        <SmallCard title="By Class">
-          <div style={{ height: 260 }}>
-            <Bar data={ipClassBar} options={vBarOpts} />
-          </div>
-        </SmallCard>
-        <SmallCard title="By Trademark Name">
-          <div style={{ height: 260 }}>
-            <Bar data={ipNameBar} options={hBarOpts} />
           </div>
         </SmallCard>
       </div>
