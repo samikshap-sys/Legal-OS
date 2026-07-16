@@ -54,7 +54,7 @@ const NAV_ITEMS: { id: Page; label: string; icon: string }[] = [
   { id: "tracker",   label: "Live Tracker",   icon: "fa-table-list" },
   { id: "requests",  label: "Requests",       icon: "fa-inbox" },
   { id: "workflows", label: "Workflows",      icon: "fa-rotate" },
-  { id: "templates", label: "Documents",      icon: "fa-folder-open" },
+  { id: "templates", label: "Downloads",      icon: "fa-folder-open" },
 ];
 
 // ── Status pill ────────────────────────────────────────────────────────────
@@ -1062,7 +1062,7 @@ type TemplateCard = {
   docs: TemplateDoc[];
 };
 
-const TEMPLATE_CARDS: TemplateCard[] = [
+const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "nda",
     name: "Non Disclore Agreement",
@@ -1153,6 +1153,9 @@ const TEMPLATE_CARDS: TemplateCard[] = [
       { name: "Reseller Partner Agreement - Fynd.docx", size: "4.1 MB", url: "legal-templates/reseller.docx" },
     ],
   },
+];
+
+const INDIA_KYC_CARDS: TemplateCard[] = [
   {
     id: "kyc-docs",
     name: "KYC Documents / Licenses / Certificates",
@@ -1167,9 +1170,23 @@ const TEMPLATE_CARDS: TemplateCard[] = [
   },
 ];
 
+// Middle East / UK — no documents yet; same structure as India, ready to fill in later.
+const MEA_AGREEMENT_CARDS: TemplateCard[] = [];
+const MEA_KYC_CARDS: TemplateCard[] = [];
+const UK_AGREEMENT_CARDS: TemplateCard[] = [];
+const UK_KYC_CARDS: TemplateCard[] = [];
+
+type DocRegion = "india" | "mea" | "uk";
+const DOC_REGIONS: { id: DocRegion; label: string; flag: string; agreements: TemplateCard[]; kyc: TemplateCard[] }[] = [
+  { id: "india", label: "India",       flag: "🇮🇳", agreements: INDIA_AGREEMENT_CARDS, kyc: INDIA_KYC_CARDS },
+  { id: "mea",   label: "Middle East", flag: "🇦🇪", agreements: MEA_AGREEMENT_CARDS,   kyc: MEA_KYC_CARDS },
+  { id: "uk",    label: "UK",          flag: "🇬🇧", agreements: UK_AGREEMENT_CARDS,    kyc: UK_KYC_CARDS },
+];
+
 function TemplatesPage() {
-  // Sub-navbar: Agreements | KYC Docs | UK Docs
-  type DocTab = "agreements" | "kyc" | "uk";
+  // Two-level nav: region (flag) → doc type (Agreements | KYC Documents)
+  type DocTab = "agreements" | "kyc";
+  const [region, setRegion] = useState<DocRegion>("india");
   const [docTab, setDocTab] = useState<DocTab>("agreements");
   const [activeCard, setActiveCard] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -1177,7 +1194,22 @@ function TemplatesPage() {
 
   const getDownloadUrl = trpc.legal.getDownloadUrl.useMutation();
 
-  const card = TEMPLATE_CARDS.find(c => c.id === activeCard) ?? null;
+  const activeRegion = DOC_REGIONS.find(r => r.id === region)!;
+  const cardsForTab = docTab === "kyc" ? activeRegion.kyc : activeRegion.agreements;
+  const card = cardsForTab.find(c => c.id === activeCard) ?? null;
+
+  const switchRegion = (r: DocRegion) => {
+    setRegion(r);
+    setDocTab("agreements");
+    setActiveCard(null);
+    setSelected(new Set());
+  };
+
+  const switchDocTab = (t: DocTab) => {
+    setDocTab(t);
+    setActiveCard(null);
+    setSelected(new Set());
+  };
 
   const handleCardClick = (id: string) => {
     if (activeCard === id) {
@@ -1238,41 +1270,48 @@ function TemplatesPage() {
   return (
     <div className="lc-pg-content">
       <div className="lc-ph-row">
-                <h1 className="lc-ph-h">Documents</h1>
+        <h1 className="lc-ph-h">Downloads</h1>
       </div>
-      {/* Sub-navbar */}
+
+      {/* Region tabs (flags) */}
+      <div className="doc-region-nav">
+        {DOC_REGIONS.map(r => (
+          <button
+            key={r.id}
+            className={`doc-region-btn${region === r.id ? " doc-region-btn-active" : ""}`}
+            onClick={() => switchRegion(r.id)}
+          >
+            <span className="doc-region-flag">{r.flag}</span>
+            <span>{r.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Doc-type sub-navbar */}
       <div className="doc-subnav">
-        <button className={`doc-subnav-btn${docTab === "agreements" ? " doc-subnav-active" : ""}`} onClick={() => { setDocTab("agreements"); setActiveCard(null); setSelected(new Set()); }}>📄 Agreements</button>
-        <button className={`doc-subnav-btn${docTab === "kyc" ? " doc-subnav-active" : ""}`} onClick={() => { setDocTab("kyc"); setActiveCard(null); setSelected(new Set()); }}>🪪 KYC Docs</button>
-        <button className={`doc-subnav-btn${docTab === "uk" ? " doc-subnav-active" : ""}`} onClick={() => { setDocTab("uk"); setActiveCard(null); setSelected(new Set()); }}>🇬🇧 UK Docs</button>
+        <button className={`doc-subnav-btn${docTab === "agreements" ? " doc-subnav-active" : ""}`} onClick={() => switchDocTab("agreements")}>📄 Agreements</button>
+        <button className={`doc-subnav-btn${docTab === "kyc" ? " doc-subnav-active" : ""}`} onClick={() => switchDocTab("kyc")}>🪪 KYC Documents</button>
       </div>
-      {docTab === "uk" && (
-        <div className="doc-empty-state"><div className="doc-empty-icon">🇬🇧</div><div className="doc-empty-title">UK Documents</div><div className="doc-empty-sub">Documents will be added here soon.</div></div>
-      )}
-      {docTab === "kyc" && (
+
+      {cardsForTab.length === 0 ? (
+        <div className="doc-empty-state">
+          <div className="doc-empty-icon">{activeRegion.flag}</div>
+          <div className="doc-empty-title">{docTab === "kyc" ? "KYC Documents" : "Agreements"} — {activeRegion.label}</div>
+          <div className="doc-empty-sub">Documents will be added here soon.</div>
+        </div>
+      ) : (
         <div className="tmpl-grid">
-          {TEMPLATE_CARDS.filter(t => t.id === "kyc-docs").map(t => (
-            <div key={t.id} className={`tmpl-card${activeCard === t.id ? " tmpl-card-active" : ""}`} onClick={() => handleCardClick(t.id)}>
+          {cardsForTab.map(t => (
+            <div
+              key={t.id}
+              className={`tmpl-card${activeCard === t.id ? " tmpl-card-active" : ""}`}
+              onClick={() => handleCardClick(t.id)}
+            >
               <div className="tmpl-card-ico">{t.icon}</div>
               <div className="tmpl-card-nm">{t.name}</div>
             </div>
           ))}
         </div>
-      )}
-      {docTab === "agreements" && (
-      <div className="tmpl-grid">
-        {TEMPLATE_CARDS.filter(t => t.id !== "kyc-docs").map(t => (
-          <div
-            key={t.id}
-            className={`tmpl-card${activeCard === t.id ? " tmpl-card-active" : ""}`}
-            onClick={() => handleCardClick(t.id)}
-          >
-            <div className="tmpl-card-ico">{t.icon}</div>
-            <div className="tmpl-card-nm">{t.name}</div>
-          </div>
-        ))}
-      </div>
-
       )}
       {/* Document panel */}
       {card && (
