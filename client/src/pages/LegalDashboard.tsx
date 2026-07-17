@@ -1066,7 +1066,7 @@ const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "nda",
     name: "Non Disclore Agreement",
-    icon: "⚖️",
+    icon: "fa-scale-balanced",
     docs: [
       { name: "Mutual NDA Fynd x Other Party.docx", size: "3.7 MB", url: "legal-templates/nda.docx" },
     ],
@@ -1074,7 +1074,7 @@ const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "msa",
     name: "Fynd Commerce MSA (For Enterprise Client)",
-    icon: "🏛️",
+    icon: "fa-building-columns",
     docs: [
       { name: "MSA _ Fynd Commerce _ Enterprise Clients.docx", size: "4.1 MB", url: "legal-templates/msa-enterprise.docx" },
     ],
@@ -1082,7 +1082,7 @@ const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "service",
     name: "Service Agreement (Fynd X Reliance)",
-    icon: "📜",
+    icon: "fa-scroll",
     docs: [
       { name: "Service Agreement _ Fynd X RBL (Fynd Commerce Service).docx", size: "229 KB", url: "legal-templates/service-rbl.docx" },
     ],
@@ -1090,7 +1090,7 @@ const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "vendor",
     name: "Vendor Agreement (Fynd as Service Receiver)",
-    icon: "🤝",
+    icon: "fa-handshake",
     docs: [
       { name: "MSA _ Fynd X Service Provider (Non-SAAS).docx", size: "485 KB", url: "legal-templates/vendor-nonsaas.docx" },
       { name: "MSA _ Fynd X Service Provider (SAAS).docx", size: "683 KB", url: "legal-templates/vendor-saas.docx" },
@@ -1099,7 +1099,7 @@ const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "3rdparty",
     name: "3rd Party Contract Resources Agreement",
-    icon: "👥",
+    icon: "fa-user-group",
     docs: [
       { name: "MSA_ Contractual Resource Template.docx", size: "6.8 MB", url: "legal-templates/3rdparty-resource.docx" },
     ],
@@ -1107,7 +1107,7 @@ const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "referral",
     name: "Referral Partnership (SOW)",
-    icon: "📋",
+    icon: "fa-clipboard-list",
     docs: [
       { name: "Referral Partnership SOW.docx", size: "736 KB", url: "legal-templates/referral-sow.docx" },
     ],
@@ -1115,7 +1115,7 @@ const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "api",
     name: "API/Integration Partner Agreement",
-    icon: "🔌",
+    icon: "fa-plug",
     docs: [
       { name: "API_Integration_Agreement_Mutual_With_Schedules.docx", size: "4.7 MB", url: "legal-templates/api-integration.docx" },
     ],
@@ -1123,7 +1123,7 @@ const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "purchase",
     name: "Purchase Agreement (for GAAS- Fynd as Seller)",
-    icon: "🛒",
+    icon: "fa-cart-shopping",
     docs: [
       { name: "1. MSA GaaS_ Fynd X Purchaser.docx", size: "1.2 MB", url: "legal-templates/purchase-gaas.docx" },
     ],
@@ -1131,7 +1131,7 @@ const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "supplier",
     name: "Supplier Agreement (for GAAS- Fynd as Purchaser)",
-    icon: "📦",
+    icon: "fa-box",
     docs: [
       { name: "2. MSA GaaS _ Fynd X Supplier.docx", size: "613 KB", url: "legal-templates/supplier-gaas.docx" },
     ],
@@ -1139,7 +1139,7 @@ const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "kiosk",
     name: "Fynd Kiosk Agreement",
-    icon: "🖥️",
+    icon: "fa-desktop",
     docs: [
       { name: "Fynd Kiosk Sale Agreement.docx", size: "484 KB", url: "legal-templates/kiosk-sale.docx" },
       { name: "Kiosk Sale Warranty Certificate.docx", size: "8.3 MB", url: "legal-templates/kiosk-warranty.docx" },
@@ -1148,7 +1148,7 @@ const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
   {
     id: "reseller",
     name: "Reseller Partnership Agreement",
-    icon: "🔗",
+    icon: "fa-link",
     docs: [
       { name: "Reseller Partner Agreement - Fynd.docx", size: "4.1 MB", url: "legal-templates/reseller.docx" },
     ],
@@ -1159,7 +1159,7 @@ const INDIA_KYC_CARDS: TemplateCard[] = [
   {
     id: "kyc-docs",
     name: "KYC Documents / Licenses / Certificates",
-    icon: "🪪",
+    icon: "fa-id-card",
     docs: [
       { name: "COI_SRTL.pdf",                        size: "412 KB",  url: "/manus-storage/COI_SRTLpdf_3aab0537.pdf" },
       { name: "List of Directors.docx",               size: "3.3 MB",  url: "/manus-storage/ListofDirectors_54b56c76.docx" },
@@ -1289,8 +1289,8 @@ function TemplatesPage() {
 
       {/* Doc-type sub-navbar */}
       <div className="doc-subnav">
-        <button className={`doc-subnav-btn${docTab === "agreements" ? " doc-subnav-active" : ""}`} onClick={() => switchDocTab("agreements")}>📄 Agreements</button>
-        <button className={`doc-subnav-btn${docTab === "kyc" ? " doc-subnav-active" : ""}`} onClick={() => switchDocTab("kyc")}>🪪 KYC Documents</button>
+        <button className={`doc-subnav-btn${docTab === "agreements" ? " doc-subnav-active" : ""}`} onClick={() => switchDocTab("agreements")}><i className="fa-solid fa-file-lines"></i> Agreements</button>
+        <button className={`doc-subnav-btn${docTab === "kyc" ? " doc-subnav-active" : ""}`} onClick={() => switchDocTab("kyc")}><i className="fa-solid fa-id-card"></i> KYC Documents</button>
       </div>
 
       {cardsForTab.length === 0 ? (
@@ -1307,7 +1307,7 @@ function TemplatesPage() {
               className={`tmpl-card${activeCard === t.id ? " tmpl-card-active" : ""}`}
               onClick={() => handleCardClick(t.id)}
             >
-              <div className="tmpl-card-ico">{t.icon}</div>
+              <div className="tmpl-card-ico"><i className={`fa-solid ${t.icon}`}></i></div>
               <div className="tmpl-card-nm">{t.name}</div>
             </div>
           ))}
@@ -1317,7 +1317,7 @@ function TemplatesPage() {
       {card && (
         <div className="tmpl-panel">
           <div className="tmpl-panel-hd">
-            <span className="tmpl-panel-ico">{card.icon}</span>
+            <span className="tmpl-panel-ico"><i className={`fa-solid ${card.icon}`}></i></span>
             <span className="tmpl-panel-title">{card.name}</span>
             <button className="tmpl-panel-close" onClick={() => { setActiveCard(null); setSelected(new Set()); }}>✕</button>
           </div>
