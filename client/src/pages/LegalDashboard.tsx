@@ -248,18 +248,18 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
     URL.revokeObjectURL(url);
   };
 
-  // Donut chart — distinct colors: Open=warm amber, On Hold=muted terracotta, Closed=dark, Pending=mid-orange
+  // Donut chart — shades of blue: Closed=deep navy, On Hold=mid blue, Pending=bright blue, Open=aqua
   const STATUS_DONUT_COLOR: Record<string, string> = {
-    Open:    "#F59E0B",  // warm amber
-    Closed:  "#1C1C1E",  // near-black
-    "On Hold": "#C0533A", // muted terracotta
-    Pending: "#FF7043",  // mid-orange
+    Open:    "#06B6D4",  // aqua (brand accent)
+    Closed:  "#164E63",  // deep navy-cyan
+    "On Hold": "#0891B2", // mid blue
+    Pending: "#22D3EE",  // bright blue
   };
   const donutData = statusData ? {
     labels: statusData.map(r => r.status),
     datasets: [{
       data: statusData.map(r => Number(r.cnt)),
-      backgroundColor: statusData.map(r => STATUS_DONUT_COLOR[r.status] || "#9AA0AB"),
+      backgroundColor: statusData.map(r => STATUS_DONUT_COLOR[r.status] || "#A5F3FC"),
       borderColor: "#ffffff",
       borderWidth: 3,
       hoverOffset: 8,
@@ -301,8 +301,8 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
     labels: regions,
     datasets: [
       { label: "Open",    data: regions.map(r => pickCnt(r, "Open")),    backgroundColor: "#06B6D4", borderRadius: 4, barThickness: 22 },
-      { label: "Closed",  data: regions.map(r => pickCnt(r, "Closed")),  backgroundColor: "#1C1C1E", borderRadius: 4, barThickness: 22 },
-      { label: "On Hold", data: regions.map(r => pickCnt(r, "On Hold")), backgroundColor: "#D97706", borderRadius: 4, barThickness: 22 },
+      { label: "Closed",  data: regions.map(r => pickCnt(r, "Closed")),  backgroundColor: "#164E63", borderRadius: 4, barThickness: 22 },
+      { label: "On Hold", data: regions.map(r => pickCnt(r, "On Hold")), backgroundColor: "#0891B2", borderRadius: 4, barThickness: 22 },
     ],
   } : null;
 
