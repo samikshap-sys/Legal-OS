@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useLcUser } from "@/contexts/LcUserContext";
 
-const BRANDMARK_BLACK = "/manus-storage/BrandmarkBlack_4fa2621f.webp";
-const BRANDMARK_WHITE = "/manus-storage/BrandmarkWhite_6ede007e.webp";
+const BRANDMARK_BLACK = "/fynd-logo.png";
+// Same asset, rendered white via CSS filter for use on dark backgrounds (footer).
+const BRANDMARK_WHITE = "/fynd-logo.png";
 
 function smoothScrollTo(id: string) {
   const el = document.getElementById(id);
@@ -237,7 +238,7 @@ export default function LegalConnect() {
         <div className="lcw-footer-watermark">LEGAL CONNECT</div>
         <div className="lcw-footer-inner">
           <div className="lcw-footer-brand">
-            <img src={BRANDMARK_WHITE} alt="Fynd" className="lcw-footer-logo" />
+            <img src={BRANDMARK_WHITE} alt="Fynd" className="lcw-footer-logo" style={{ filter: "invert(1) brightness(2)" }} />
             <span className="lcw-footer-name">Legal Connect</span>
           </div>
           <div className="lcw-footer-tagline">Legal Intelligence Layer · Fynd Internal Platform</div>
