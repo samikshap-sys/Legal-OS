@@ -68,7 +68,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 const CHART_COLORS = {
-  orange:    "#06B6D4",
+  orange:    "#092045",
   dark:      "#1C1C1E",
   amber:     "#D97706",
   teal:      "#0d6e6e",
@@ -84,13 +84,13 @@ const PALETTE_6 = [CHART_COLORS.orange, CHART_COLORS.dark, CHART_COLORS.amber, C
 
 // Orange-black gradient palette for multi-bar charts
 const OB_PALETTE = [
-  "#06B6D4", "#1C1C1E", "#D97706", "#3D1A0A", "#FF7043",
+  "#092045", "#1C1C1E", "#D97706", "#3D1A0A", "#FF7043",
   "#4A2010", "#E8440A", "#2A2A2A", "#FF8C42", "#0D0D0D",
 ];
 
 // Rich multicolour palette — 15 distinct colours for per-bar colouring
 const MULTI_PALETTE = [
-  "#06B6D4", // orange
+  "#092045", // orange
   "#2563eb", // blue
   "#16a34a", // green
   "#D97706", // amber
@@ -111,7 +111,7 @@ const multiColors = (n: number) => Array.from({ length: n }, (_, i) => MULTI_PAL
 
 // Status colour map for aging/amount charts
 const STATUS_COLOR: Record<string, string> = {
-  "Open": "#06B6D4",
+  "Open": "#092045",
   "Under Discussion": "#D97706",
   "Partial Recovery": "#FF7043",
   "Closed": "#1C1C1E",
@@ -248,18 +248,18 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
     URL.revokeObjectURL(url);
   };
 
-  // Donut chart — shades of blue: Closed=deep navy, On Hold=mid blue, Pending=bright blue, Open=aqua
+  // Donut chart — navy/cream palette: Closed=darkest navy, On Hold=slate navy, Pending=cream accent, Open=navy
   const STATUS_DONUT_COLOR: Record<string, string> = {
-    Open:    "#06B6D4",  // aqua (brand accent)
-    Closed:  "#164E63",  // deep navy-cyan
-    "On Hold": "#0891B2", // mid blue
-    Pending: "#22D3EE",  // bright blue
+    Open:    "#092045",  // primary navy
+    Closed:  "#030B18",  // near-black navy (anchors dominant slice)
+    "On Hold": "#3B5A85", // slate navy
+    Pending: "#F6E5BC",  // cream accent
   };
   const donutData = statusData ? {
     labels: statusData.map(r => r.status),
     datasets: [{
       data: statusData.map(r => Number(r.cnt)),
-      backgroundColor: statusData.map(r => STATUS_DONUT_COLOR[r.status] || "#A5F3FC"),
+      backgroundColor: statusData.map(r => STATUS_DONUT_COLOR[r.status] || "#D9C9A0"),
       borderColor: "#ffffff",
       borderWidth: 3,
       hoverOffset: 8,
@@ -300,9 +300,9 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
   const regionBarData = regions.length ? {
     labels: regions,
     datasets: [
-      { label: "Open",    data: regions.map(r => pickCnt(r, "Open")),    backgroundColor: "#06B6D4", borderRadius: 4, barThickness: 22 },
-      { label: "Closed",  data: regions.map(r => pickCnt(r, "Closed")),  backgroundColor: "#164E63", borderRadius: 4, barThickness: 22 },
-      { label: "On Hold", data: regions.map(r => pickCnt(r, "On Hold")), backgroundColor: "#0891B2", borderRadius: 4, barThickness: 22 },
+      { label: "Open",    data: regions.map(r => pickCnt(r, "Open")),    backgroundColor: "#092045", borderRadius: 4, barThickness: 22 },
+      { label: "Closed",  data: regions.map(r => pickCnt(r, "Closed")),  backgroundColor: "#030B18", borderRadius: 4, barThickness: 22 },
+      { label: "On Hold", data: regions.map(r => pickCnt(r, "On Hold")), backgroundColor: "#3B5A85", borderRadius: 4, barThickness: 22 },
     ],
   } : null;
 
@@ -320,7 +320,7 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
   };
 
   // Doc types bar
-  const barPalette = ["#06B6D4","#0891B2","#FF7043","#FF8A65","#FFAB91","#1C1C1E"];
+  const barPalette = ["#092045","#051329","#FF7043","#FF8A65","#FFAB91","#1C1C1E"];
   const docBarData = docData ? {
     labels: docData.map(r => r.label),
     datasets: [{
@@ -337,7 +337,7 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
     plugins: {
       legend: { display: false },
       tooltip: { backgroundColor: "#202124", titleColor: "#fff", bodyColor: "rgba(255,255,255,0.75)", padding: 10, cornerRadius: 8 },
-      datalabels: { anchor: "end", align: "end", offset: 2, color: "#06B6D4", font: { size: 13, weight: "700" }, formatter: (v: number) => v },
+      datalabels: { anchor: "end", align: "end", offset: 2, color: "#092045", font: { size: 13, weight: "700" }, formatter: (v: number) => v },
     },
     scales: {
       x: { grid: { display: false }, ticks: { font: { size: 11 }, color: "#5f6368" }, border: { display: false } },
@@ -768,7 +768,7 @@ function TrackerPage() {
         {/* Table header — matches Request Logs design */}
         <div className="rl-table-header">
           <div className="rl-table-title">
-            <i className="fa-solid fa-table-list" style={{marginRight:8,color:"#06B6D4"}}></i>
+            <i className="fa-solid fa-table-list" style={{marginRight:8,color:"#092045"}}></i>
             Live Contract Tracker
           </div>
           <span className="rl-record-count">{!isLoading && rows ? `${rows.length} records` : ''}</span>
@@ -869,10 +869,10 @@ function TrackerPage() {
 
 // ── Team page ──────────────────────────────────────────────────────────────
 const TEAM_META: Record<string, { gradient: string; initials: string; role: string; email: string }> = {
-  Farheen:  { gradient: "linear-gradient(135deg,#06B6D4,#0891B2)", initials: "FA", role: "Head of Legal",           email: "farheen.ansari@gofynd.com" },
-  Aditi:    { gradient: "linear-gradient(135deg,#0891B2,#FF7043)", initials: "AS", role: "Legal Associate",          email: "aditi.sinha@gofynd.com" },
-  Samiksha: { gradient: "linear-gradient(135deg,#FF7043,#FF8A65)", initials: "SP", role: "Legal Associate",          email: "samiksha.parekh@gofynd.com" },
-  Sreshta:  { gradient: "linear-gradient(135deg,#1C1C1E,#06B6D4)", initials: "SR", role: "Legal Associate",          email: "sreshtha@gofynd.com" },
+  Farheen:  { gradient: "linear-gradient(135deg,#092045,#051329)", initials: "FA", role: "Head of Legal",           email: "farheen.ansari@gofynd.com" },
+  Aditi:    { gradient: "linear-gradient(135deg,#3B5A85,#092045)", initials: "AS", role: "Legal Associate",          email: "aditi.sinha@gofynd.com" },
+  Samiksha: { gradient: "linear-gradient(135deg,#092045,#6B87AB)", initials: "SP", role: "Legal Associate",          email: "samiksha.parekh@gofynd.com" },
+  Sreshta:  { gradient: "linear-gradient(135deg,#1C1C1E,#092045)", initials: "SR", role: "Legal Associate",          email: "sreshtha@gofynd.com" },
 };
 
 function TeamPage() {
@@ -937,7 +937,7 @@ function TeamPage() {
           </thead>
           <tbody>
             {members.map(m => {
-              const meta = TEAM_META[m.member] || { gradient: "linear-gradient(135deg,#06B6D4,#0891B2)", initials: m.member.substring(0, 2).toUpperCase(), role: "Legal Team", email: "" };
+              const meta = TEAM_META[m.member] || { gradient: "linear-gradient(135deg,#092045,#051329)", initials: m.member.substring(0, 2).toUpperCase(), role: "Legal Team", email: "" };
               const resolvedPct = m.total > 0 ? Math.round((m.closed_count / m.total) * 100) : 0;
               const workloadPct = grandTotal > 0 ? Math.round((m.total / grandTotal) * 100) : 0;
               return (
@@ -971,7 +971,7 @@ function TeamPage() {
       {/* Member Cards */}
       <div className="team-cards-grid">
         {members.map(m => {
-          const meta = TEAM_META[m.member] || { gradient: "linear-gradient(135deg,#06B6D4,#0891B2)", initials: m.member.substring(0, 2).toUpperCase(), role: "Legal Team", email: "" };
+          const meta = TEAM_META[m.member] || { gradient: "linear-gradient(135deg,#092045,#051329)", initials: m.member.substring(0, 2).toUpperCase(), role: "Legal Team", email: "" };
           const resolvedPct = m.total > 0 ? Math.round((m.closed_count / m.total) * 100) : 0;
           const workloadPct = grandTotal > 0 ? Math.round((m.total / grandTotal) * 100) : 0;
           const openRate    = m.total > 0 ? Math.round((m.open_count / m.total) * 100) : 0;
@@ -2279,7 +2279,7 @@ function RequestsLogsPage() {
       <div className="rl-table-card">
         <div className="rl-table-header">
           <div className="rl-table-title">
-            <i className="fa-solid fa-table-list" style={{marginRight:8,color:"#06B6D4"}}></i>
+            <i className="fa-solid fa-table-list" style={{marginRight:8,color:"#092045"}}></i>
             Request Logs
           </div>
           <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
@@ -2434,7 +2434,7 @@ function RequestsLogsPage() {
                   <div className="rl-modal-fg" style={{justifyContent:'center'}}>
                     <label>Confidential</label>
                     <label style={{display:'flex',alignItems:'center',gap:'.5rem',cursor:'pointer',marginTop:'.2rem'}}>
-                      <input type="checkbox" checked={form.is_confidential} onChange={e => setF('is_confidential', e.target.checked)} style={{width:'auto',accentColor:'#06B6D4'}} />
+                      <input type="checkbox" checked={form.is_confidential} onChange={e => setF('is_confidential', e.target.checked)} style={{width:'auto',accentColor:'#092045'}} />
                       <span style={{fontSize:'.85rem',color:'#374151'}}>Mark as confidential</span>
                     </label>
                   </div>

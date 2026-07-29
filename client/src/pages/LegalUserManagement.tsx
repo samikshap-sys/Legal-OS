@@ -1,7 +1,7 @@
 /**
  * LegalUserManagement — Legal Connect User Management Panel
  *
- * Theme: Legal Connect navy/blue (#1C1C1E, #06B6D4, #06B6D4) + white
+ * Theme: Legal Connect navy/blue (#1C1C1E, #092045, #092045) + white
  * Admin view: add/edit/remove users with scope checkboxes grouped by section
  * Non-admin view: read-only list of all provisioned users and their scopes
  *
@@ -45,8 +45,8 @@ const ALL_SCOPES = Object.values(SCOPE_GROUPS).flat();
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 const AVATAR_PALETTE = [
-  "#1C1C1E", "#06B6D4", "#06B6D4", "#0891B2", "#06B6D4",
-  "#0891B2", "#06B6D4", "#06B6D4", "#FF7043", "#FF8A65",
+  "#1C1C1E", "#092045", "#092045", "#051329", "#092045",
+  "#051329", "#092045", "#092045", "#3B5A85", "#6B87AB",
 ];
 
 function avatarColor(email: string): string {
@@ -67,7 +67,7 @@ function initials(name: string, email: string): string {
 
 // ── Group badge colours ───────────────────────────────────────────────────────
 const GROUP_COLOURS: Record<string, { bg: string; text: string; border: string }> = {
-  Core:       { bg: "rgba(37,99,235,0.10)", text: "#06B6D4", border: "rgba(37,99,235,0.20)" },
+  Core:       { bg: "rgba(37,99,235,0.10)", text: "#092045", border: "rgba(37,99,235,0.20)" },
   Operations: { bg: "rgba(26,40,85,0.10)",  text: "#1C1C1E", border: "rgba(26,40,85,0.20)" },
   Admin:      { bg: "rgba(124,58,237,0.10)", text: "#7c3aed", border: "rgba(124,58,237,0.20)" },
 };
@@ -143,7 +143,7 @@ function ScopeModal({
       }}>
         {/* Modal header */}
         <div style={{
-          background: "linear-gradient(135deg, #1C1C1E 0%, #06B6D4 100%)",
+          background: "linear-gradient(135deg, #1C1C1E 0%, #092045 100%)",
           padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -222,7 +222,7 @@ function ScopeModal({
               </span>
               <div style={{ display: "flex", gap: 6 }}>
                 <button onClick={selectAll} style={{
-                  fontSize: 11, fontWeight: 600, color: "#06B6D4", background: "rgba(37,99,235,0.08)",
+                  fontSize: 11, fontWeight: 600, color: "#092045", background: "rgba(37,99,235,0.08)",
                   border: "1px solid rgba(37,99,235,0.2)", borderRadius: 5, padding: "3px 9px", cursor: "pointer",
                 }}>All</button>
                 <button onClick={clearAll} style={{
@@ -252,7 +252,7 @@ function ScopeModal({
                       borderRadius: 4, padding: "1px 8px",
                     }}>{grp}</span>
                     <button onClick={() => toggleGroup(items.map(s => s.id))} style={{
-                      fontSize: 11, fontWeight: 600, color: allOn ? "#dc2626" : "#06B6D4",
+                      fontSize: 11, fontWeight: 600, color: allOn ? "#dc2626" : "#092045",
                       background: "none", border: "none", cursor: "pointer", padding: "2px 6px",
                     }}>
                       {allOn ? "Deselect all" : "Select all"}
@@ -273,7 +273,7 @@ function ScopeModal({
                           type="checkbox"
                           checked={selected.has(s.id)}
                           onChange={() => toggle(s.id)}
-                          style={{ accentColor: "#06B6D4", width: 14, height: 14, cursor: "pointer" }}
+                          style={{ accentColor: "#092045", width: 14, height: 14, cursor: "pointer" }}
                         />
                         <span style={{ fontSize: 12, fontWeight: 500, color: "#202124" }}>{s.label}</span>
                       </label>
@@ -297,7 +297,7 @@ function ScopeModal({
                 padding: "8px 20px", borderRadius: 7, border: "none",
                 background: isSaving || !email.trim()
                   ? "#9ca3af"
-                  : "linear-gradient(135deg, #1C1C1E 0%, #06B6D4 100%)",
+                  : "linear-gradient(135deg, #1C1C1E 0%, #092045 100%)",
                 color: "#fff", fontSize: 13, fontWeight: 700, cursor: isSaving || !email.trim() ? "not-allowed" : "pointer",
                 boxShadow: "0 2px 8px rgba(26,40,85,0.25)",
               }}
@@ -377,7 +377,7 @@ export default function LegalUserManagement() {
               {/* Shield icon */}
               <div style={{
                 width: 36, height: 36, borderRadius: 9,
-                background: "linear-gradient(135deg, #1C1C1E 0%, #06B6D4 100%)",
+                background: "linear-gradient(135deg, #1C1C1E 0%, #092045 100%)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 boxShadow: "0 2px 8px rgba(26,40,85,0.25)",
               }}>
@@ -390,7 +390,7 @@ export default function LegalUserManagement() {
               </h1>
               {isAdmin && (
                 <span style={{
-                  background: "linear-gradient(135deg, #1C1C1E, #06B6D4)", color: "#fff",
+                  background: "linear-gradient(135deg, #1C1C1E, #092045)", color: "#fff",
                   fontSize: 10, fontWeight: 800, letterSpacing: 0.8, textTransform: "uppercase",
                   padding: "2px 8px", borderRadius: 20,
                 }}>Admin</span>
@@ -405,7 +405,7 @@ export default function LegalUserManagement() {
           {isAdmin && (
             <button onClick={openAdd} style={{
               display: "flex", alignItems: "center", gap: 7,
-              background: "linear-gradient(135deg, #1C1C1E 0%, #06B6D4 100%)",
+              background: "linear-gradient(135deg, #1C1C1E 0%, #092045 100%)",
               color: "#fff", border: "none", borderRadius: 9, padding: "10px 20px",
               cursor: "pointer", fontSize: 13, fontWeight: 700,
               boxShadow: "0 2px 10px rgba(26,40,85,0.30)",
@@ -436,9 +436,9 @@ export default function LegalUserManagement() {
           {
             label: "Total Scopes",
             value: ALL_SCOPES.length,
-            accent: "#06B6D4",
+            accent: "#092045",
             icon: (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#092045" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
@@ -447,9 +447,9 @@ export default function LegalUserManagement() {
           {
             label: "Fully Provisioned",
             value: (users as UserRow[] | undefined)?.filter((u: UserRow) => u.scopes.length === ALL_SCOPES.length).length ?? 0,
-            accent: "#06B6D4",
+            accent: "#092045",
             icon: (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#092045" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 <polyline points="9 12 11 14 15 10"/>
               </svg>
@@ -528,7 +528,7 @@ export default function LegalUserManagement() {
           <div style={{ padding: "60px 20px", textAlign: "center" }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
               <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(26,40,85,0.07)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#092045" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                 </svg>
@@ -544,7 +544,7 @@ export default function LegalUserManagement() {
         ) : (
           filtered.map((u: UserRow, idx: number) => {
             const coverage = ALL_SCOPES.length > 0 ? Math.round((u.scopes.length / ALL_SCOPES.length) * 100) : 0;
-            const coverageColor = "#06B6D4";
+            const coverageColor = "#092045";
             return (
               <div key={u.email} style={{
                 display: "grid",
@@ -579,7 +579,7 @@ export default function LegalUserManagement() {
                   ) : u.scopes.length === ALL_SCOPES.length ? (
                     <span style={{
                       display: "inline-flex", alignItems: "center", gap: 4,
-                      background: "rgba(42,74,181,0.10)", color: "#06B6D4",
+                      background: "rgba(42,74,181,0.10)", color: "#092045",
                       border: "1px solid rgba(42,74,181,0.2)", borderRadius: 4,
                       padding: "2px 8px", fontSize: 11, fontWeight: 700,
                     }}>
@@ -628,7 +628,7 @@ export default function LegalUserManagement() {
                       style={{
                         width: 30, height: 30, borderRadius: 7,
                         background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.18)",
-                        color: "#06B6D4", cursor: "pointer",
+                        color: "#092045", cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         transition: "background 0.15s",
                       }}
