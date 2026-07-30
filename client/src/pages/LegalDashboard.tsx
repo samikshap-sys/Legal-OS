@@ -1555,6 +1555,7 @@ const STAGES = [
   { id: 'pending-finance',    label: 'Pending from Finance'  },
   { id: 'pending-client',     label: 'Pending from Client'   },
   { id: 'on-hold',            label: 'On Hold'               },
+  { id: 'sent-for-signature', label: 'Sent for Signature'    },
   { id: 'executed',           label: 'Executed'              },
 ];
 const STAGE_IDS = STAGES.map(s => s.id);
@@ -1599,6 +1600,7 @@ function StatusChip({ status }: { status: string }) {
     'pending-finance':       ['ch-o', 'Pending from Finance'],
     'pending-client':        ['ch-o', 'Pending from Client'],
     'on-hold':               ['ch-g', 'On Hold'],
+    'sent-for-signature':    ['ch-o', 'Sent for Signature'],
     'executed':              ['ch-g', 'Executed ✓'],
     'rejected':              ['ch-r', 'Rejected'],
     'submitted':             ['ch-p', 'Request Raised'],
