@@ -395,16 +395,6 @@ export const legalRouter = router({
       return { url };
     }),
 
-  /** Requests Logs — full BQ table dump (admin only) */
-  getRequestsLogs: publicProcedure.query(async ({ ctx }) => {
-    const lcUser = await getLcUser(ctx.req);
-    if (!lcUser || !LC_ADMIN_EMAILS.has(lcUser.email)) {
-      throw new Error('FORBIDDEN: admin access required');
-    }
-    const rows = await getRequests();
-    return { rows };
-  }),
-
   /** Per-reviewer team stats */
   teamStats: publicProcedure.query(async () => {
     const lastUpdated = getSheetLastFetched()?.toISOString() ?? null;
