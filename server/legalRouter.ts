@@ -161,8 +161,12 @@ export const legalRouter = router({
   /** Last 10 contracts for dashboard table */
   recent: publicProcedure.query(async () => {
     let rows = await getSheetData();
+    const parseRequestDate = (s: string) => {
+      const t = new Date(s).getTime();
+      return isNaN(t) ? 0 : t;
+    };
     rows = [...rows].sort((a, b) =>
-      (b['Request Date'] || '').localeCompare(a['Request Date'] || '')
+      parseRequestDate(b['Request Date'] || '') - parseRequestDate(a['Request Date'] || '')
     );
     return rows.slice(0, 10).map(r => ({
       Brand_Name:        r['Counter Party Legal Name'] || '—',
@@ -198,6 +202,14 @@ export const legalRouter = router({
           Object.values(r).some(v => v.toLowerCase().includes(q))
         );
       }
+
+      const parseRequestDate = (s: string) => {
+        const t = new Date(s).getTime();
+        return isNaN(t) ? 0 : t;
+      };
+      rows = [...rows].sort((a, b) =>
+        parseRequestDate(b['Request Date'] || '') - parseRequestDate(a['Request Date'] || '')
+      );
 
       return rows.map(r => ({
         Request_Date:     r['Request Date'] || '',
