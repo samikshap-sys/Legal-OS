@@ -705,6 +705,7 @@ input.fsel:focus { border-color: rgba(9,32,69,0.5); box-shadow: 0 0 0 3px rgba(9
 .wf-sts { font-family: var(--font-body); font-size: 0.62rem; color: var(--text3); margin-top: 2px; }
 .wf-type-row { font-family: var(--font-body); font-size: 0.80rem; font-weight: 500; color: var(--text2); margin-bottom: 0.5rem; }
 .wf-type-row span { font-weight: 600; background: linear-gradient(135deg, #092045 0%, #3B5A85 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.wf-counter-party { font-family: var(--font-body); font-size: 0.80rem; color: var(--text2); margin-bottom: 0.5rem; }
 .wf-tags-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
 .wf-tag {
   font-family: var(--font-body);

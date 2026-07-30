@@ -1647,8 +1647,13 @@ interface WfRequest {
   requested_by: string;
   status_updated_by: string;
   counter_party: string;
+  customer_type: string;
   ip_product: string;
   biz_segment: string;
+  pnl_owner: string;
+  region: string;
+  is_confidential: boolean;
+  updated_at: string;
 }
 
 function WfTimeline({ status, historyJson }: { status: string; historyJson: string }) {
@@ -1707,14 +1712,6 @@ function WfCard({ wf, onUpdate }: { wf: WfRequest; onUpdate: () => void }) {
   const dateStr = submitted.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const timeStr = submitted.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-  // Extract ipProduct from the first history entry (stored at submission time)
-  const ipProduct: string = (() => {
-    try {
-      const hist = JSON.parse(wf.history_json || '[]') as Array<{ ipProduct?: string }>;
-      return hist[0]?.ipProduct || '';
-    } catch { return ''; }
-  })();
-
   const isActive = wf.current_status !== 'executed' && wf.current_status !== 'rejected' && wf.current_status !== 'completed';
 
   const handleSave = () => {
@@ -1744,11 +1741,12 @@ function WfCard({ wf, onUpdate }: { wf: WfRequest; onUpdate: () => void }) {
         <div>
           <div className="wf-id-badge">{wf.request_id}</div>
           <div className="wf-nm">{wf.requester_name || '—'}</div>
-          <div className="wf-dept">{wf.department || ''}{ipProduct ? ` · ${ipProduct}` : ''} · {wf.requester_email || ''}</div>
+          <div className="wf-dept">{wf.department || ''} · {wf.requester_email || ''}</div>
         </div>
         <div className="wf-meta-right">
           <StatusChip status={wf.current_status} />
           <PriChip priority={wf.priority} />
+          {!!wf.is_confidential && <span className="chip ch-r">🔒 Confidential</span>}
           <div className="wf-date">{dateStr} · {timeStr}</div>
           {wf.deadline && <div className="wf-date">Due: {wf.deadline}</div>}
           {isAdmin && (
@@ -1768,6 +1766,13 @@ function WfCard({ wf, onUpdate }: { wf: WfRequest; onUpdate: () => void }) {
       {wf.counter_party && (
         <div className="wf-counter-party">Counter Party: <strong>{wf.counter_party}</strong></div>
       )}
+      <div className="wf-tags-row">
+        {wf.customer_type && <div className="wf-tag"><b>Customer Type:</b> {wf.customer_type}</div>}
+        {wf.ip_product && <div className="wf-tag"><b>IP/Product:</b> {wf.ip_product}</div>}
+        {wf.biz_segment && <div className="wf-tag"><b>Business Segment:</b> {wf.biz_segment}</div>}
+        {wf.pnl_owner && <div className="wf-tag"><b>PNL Owner:</b> {wf.pnl_owner}</div>}
+        {wf.region && <div className="wf-tag"><b>Region:</b> {wf.region}</div>}
+      </div>
       {wf.description && <div className="wf-desc">{wf.description}</div>}
       <div className="wf-user-row">
         {wf.requested_by && (
