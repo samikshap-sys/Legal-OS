@@ -1413,8 +1413,8 @@ function RequestsPage() {
     submitMutation.mutate({ name, email, dept, type, counterParty, customerType, ipProduct, bizSegment, pnlOwner, region, priority, deadline, description: desc, docLink, requestedBy: lcUser?.name || lcUser?.email || '' });
   };
 
-  const dynSelect = (vals: string[] | undefined, value: string, onChange: (v: string) => void) => (
-    <select value={value} onChange={e => onChange(e.target.value)}>
+  const dynSelect = (vals: string[] | undefined, value: string, onChange: (v: string) => void, required = false) => (
+    <select required={required} value={value} onChange={e => onChange(e.target.value)}>
       <option value="">Select…</option>
       {(vals || []).map(v => <option key={v} value={v}>{v}</option>)}
     </select>
@@ -1474,32 +1474,32 @@ function RequestsPage() {
 
             {/* Row 3: Counter Party Legal Name + Customer Type */}
             <div className="req-fg">
-              <label>Counter Party Legal Name</label>
-              <input type="text" placeholder="Legal name of the counterparty" value={counterParty} onChange={e => setCounterParty(e.target.value)} />
+              <label>Counter Party Legal Name *</label>
+              <input type="text" placeholder="Legal name of the counterparty" required value={counterParty} onChange={e => setCounterParty(e.target.value)} />
             </div>
             <div className="req-fg">
-              <label>Customer Type</label>
-              {dynSelect(opts?.customer_types, customerType, setCustomerType)}
+              <label>Customer Type *</label>
+              {dynSelect(opts?.customer_types, customerType, setCustomerType, true)}
             </div>
 
             {/* Row 4: IP / Product + Business Segment */}
             <div className="req-fg">
-              <label>IP / Product</label>
-              {dynSelect(opts?.ip_products, ipProduct, setIpProduct)}
+              <label>IP / Product *</label>
+              {dynSelect(opts?.ip_products, ipProduct, setIpProduct, true)}
             </div>
             <div className="req-fg">
-              <label>Business Segment</label>
-              {dynSelect(opts?.business_segments, bizSegment, setBizSegment)}
+              <label>Business Segment *</label>
+              {dynSelect(opts?.business_segments, bizSegment, setBizSegment, true)}
             </div>
 
             {/* Row 5: PNL Owner + Region */}
             <div className="req-fg">
-              <label>PNL Owner</label>
-              {dynSelect(opts?.pnl_owners, pnlOwner, setPnlOwner)}
+              <label>PNL Owner *</label>
+              {dynSelect(opts?.pnl_owners, pnlOwner, setPnlOwner, true)}
             </div>
             <div className="req-fg">
-              <label>Region</label>
-              {dynSelect(opts?.regions, region, setRegion)}
+              <label>Region *</label>
+              {dynSelect(opts?.regions, region, setRegion, true)}
             </div>
 
             {/* Row 6: Priority + Deadline */}
