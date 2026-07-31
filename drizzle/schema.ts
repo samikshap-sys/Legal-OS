@@ -53,7 +53,7 @@ export const lcRequests = pgTable("lc_requests", {
   department:        varchar("department",        { length: 255 }).notNull().default(""),
   request_type:      varchar("request_type",      { length: 255 }).notNull().default(""),
   priority:          varchar("priority",          { length: 64  }).notNull().default(""),
-  deadline:          varchar("deadline",          { length: 64  }).notNull().default(""),
+  deadline:          varchar("deadline",          { length: 64  }).default(""),
   description:       text("description"),
   doc_link:          text("doc_link"),
   counter_party:     varchar("counter_party",     { length: 512 }).notNull().default(""),

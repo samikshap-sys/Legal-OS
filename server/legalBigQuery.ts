@@ -168,7 +168,9 @@ export async function insertRequest(d: InsertRequestInput): Promise<string> {
     department:        d.dept           || '',
     request_type:      d.type           || '',
     priority:          d.priority       || '',
-    deadline:          d.deadline       || '',
+    // Live column is timestamptz — an empty string is not a valid timestamp literal, so
+    // an unset (optional) deadline must be NULL rather than ''.
+    deadline:          d.deadline       || null,
     description:       d.description    || '',
     doc_link:          d.docLink        || '',
     submitted_at:      now,
@@ -232,7 +234,7 @@ export async function updateFullRequest(d: UpdateRequestInput): Promise<void> {
       pnl_owner:         d.pnl_owner         || '',
       region:            d.region            || '',
       priority:          d.priority          || '',
-      deadline:          d.deadline          || '',
+      deadline:          d.deadline          || null,
       description:       d.description       || '',
       doc_link:          d.doc_link          || '',
       current_status:    d.current_status    || 'request-raised',
