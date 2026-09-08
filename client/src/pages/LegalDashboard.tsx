@@ -1682,6 +1682,8 @@ interface WfRequest {
   pnl_owner: string;
   region: string;
   deal_value: string;
+  signed_doc_key: string;
+  signed_doc_name: string;
   is_confidential: boolean;
   updated_at: string;
 }
@@ -1725,6 +1727,9 @@ function WfCard({ wf, onUpdate }: { wf: WfRequest; onUpdate: () => void }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const isAdmin = !!(lcUser && LC_ADMIN_EMAILS.has(lcUser.email));
 
@@ -1737,6 +1742,29 @@ function WfCard({ wf, onUpdate }: { wf: WfRequest; onUpdate: () => void }) {
     onSuccess: () => { setDeleting(false); setConfirmDelete(false); onUpdate(); },
     onError: () => { setDeleting(false); setConfirmDelete(false); },
   });
+
+  const uploadMutation = trpc.legal.uploadSignedDocument.useMutation({
+    onSuccess: () => { setUploading(false); setUploadOpen(false); setUploadError(null); onUpdate(); },
+    onError: (err) => { setUploading(false); setUploadError(err.message || 'Upload failed. Please try again.'); },
+  });
+
+  const handleUploadFile = (file: File) => {
+    setUploading(true);
+    setUploadError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '');
+      const base64 = dataUrl.split(',')[1] || '';
+      uploadMutation.mutate({
+        id: wf.request_id,
+        fileName: file.name,
+        fileBase64: base64,
+        contentType: file.type || 'application/octet-stream',
+      });
+    };
+    reader.onerror = () => { setUploading(false); setUploadError('Could not read that file.'); };
+    reader.readAsDataURL(file);
+  };
 
   const submitted = wf.submitted_at ? new Date(wf.submitted_at) : new Date();
   const dateStr = submitted.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -1824,9 +1852,36 @@ function WfCard({ wf, onUpdate }: { wf: WfRequest; onUpdate: () => void }) {
         {isActive && isAdmin && (
           <button className="btn-toggle-upd" onClick={() => setPanelOpen(o => !o)}>Update Status</button>
         )}
+        {isAdmin && (
+          <button className="btn-toggle-upd" onClick={() => setUploadOpen(o => !o)}>
+            {wf.signed_doc_key ? 'Replace Signed Doc' : 'Upload Signed Doc'}
+          </button>
+        )}
         {wf.status_note && <div className="wf-note-txt">{wf.status_note}</div>}
         {wf.doc_link && <a href={wf.doc_link} target="_blank" rel="noreferrer" style={{ fontSize: '0.67rem', color: 'var(--accent)' }}>Attached Doc</a>}
+        {wf.signed_doc_key && (
+          <a
+            href={`/api/download?key=${encodeURIComponent(wf.signed_doc_key)}&name=${encodeURIComponent(wf.signed_doc_name)}`}
+            style={{ fontSize: '0.67rem', color: 'var(--accent)' }}
+          >
+            <i className="fa-solid fa-file-signature" style={{ marginRight: 4 }}></i>
+            Download Signed Document
+          </a>
+        )}
       </div>
+      {isAdmin && uploadOpen && (
+        <div className="wf-update-panel open">
+          <div className="wf-uprow">
+            <input
+              type="file"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadFile(f); }}
+              disabled={uploading}
+            />
+            {uploading && <span style={{ fontSize: '0.72rem', color: 'var(--text3)' }}>Uploading…</span>}
+          </div>
+          {uploadError && <div className="wf-note-txt" style={{ color: '#dc2626' }}>{uploadError}</div>}
+        </div>
+      )}
       {isActive && isAdmin && panelOpen && (
         <div className="wf-update-panel open">
           <div className="wf-uprow">

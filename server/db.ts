@@ -34,6 +34,8 @@ export async function getDb() {
 async function ensureLegalSchema(db: ReturnType<typeof drizzle>) {
   try {
     await db.execute(sql`ALTER TABLE lc_requests ADD COLUMN IF NOT EXISTS deal_value numeric(14,2)`);
+    await db.execute(sql`ALTER TABLE lc_requests ADD COLUMN IF NOT EXISTS signed_doc_key text`);
+    await db.execute(sql`ALTER TABLE lc_requests ADD COLUMN IF NOT EXISTS signed_doc_name varchar(255)`);
   } catch (error) {
     console.warn("[Database] ensureLegalSchema failed:", error);
   }

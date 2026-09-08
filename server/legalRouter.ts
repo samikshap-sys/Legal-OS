@@ -8,9 +8,9 @@ import { z } from 'zod';
 import { publicProcedure, router } from './_core/trpc';
 import { getSheetData, normalizeStatus, getSheetLastFetched } from './legalSheets';
 import { getDisputeChartData, getTMSheetRows, getClaimsByFyndRows, getClaimsAgainstFyndRows } from './disputeSheets';
-import { getRequests, insertRequest, patchRequest, deleteRequest, updateFullRequest } from './legalBigQuery';
+import { getRequests, insertRequest, patchRequest, deleteRequest, updateFullRequest, setSignedDoc } from './legalBigQuery';
 import { getLcUser } from './lcAuthRouter';
-import { storageGetSignedUrl } from './storage';
+import { storageGetSignedUrl, storagePut } from './storage';
 
 // ─── Slack notification helper ───────────────────────────────────────────────
 const LC_SLACK_CHANNEL = 'C0B40G1E02C'; // #legal-connect-requests
@@ -406,6 +406,25 @@ export const legalRouter = router({
       const key = input.key.replace(/^\/manus-storage\//, '');
       const url = await storageGetSignedUrl(key);
       return { url };
+    }),
+
+  /** Upload the signed/executed copy of a request's document (admin only) */
+  uploadSignedDocument: publicProcedure
+    .input(z.object({
+      id:           z.string().min(1),
+      fileName:     z.string().min(1),
+      fileBase64:   z.string().min(1),
+      contentType:  z.string().default('application/octet-stream'),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const lcUser = await getLcUser(ctx.req);
+      if (!lcUser || !LC_ADMIN_EMAILS.has(lcUser.email)) {
+        throw new Error('FORBIDDEN: admin access required');
+      }
+      const buffer = Buffer.from(input.fileBase64, 'base64');
+      const { key } = await storagePut(`legal/signed-docs/${input.id}/${input.fileName}`, buffer, input.contentType);
+      await setSignedDoc(input.id, key, input.fileName);
+      return { key, name: input.fileName };
     }),
 
   /** Per-reviewer team stats */

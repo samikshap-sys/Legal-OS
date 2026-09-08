@@ -37,6 +37,8 @@ export interface LegalRequest {
   pnl_owner: string;
   region: string;
   deal_value: string;
+  signed_doc_key: string;
+  signed_doc_name: string;
   is_confidential: boolean;
 }
 
@@ -109,6 +111,8 @@ function normaliseRow(row: typeof lcRequests.$inferSelect): LegalRequest {
     pnl_owner:         row.pnl_owner         ?? '',
     region:            row.region            ?? '',
     deal_value:        row.deal_value        ?? '',
+    signed_doc_key:    row.signed_doc_key     ?? '',
+    signed_doc_name:   row.signed_doc_name    ?? '',
     is_confidential:   Boolean(row.is_confidential),
   };
 }
@@ -216,6 +220,20 @@ export async function patchRequest(
       updated_at:        now,
       history_json:      history_json   || '[]',
       status_updated_by: statusUpdatedBy || '',
+    })
+    .where(eq(lcRequests.request_id, id));
+}
+
+/** Attach the signed document key/name to a request (admin only — enforced at router level) */
+export async function setSignedDoc(id: string, key: string, name: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db
+    .update(lcRequests)
+    .set({
+      signed_doc_key:  key,
+      signed_doc_name: name,
+      updated_at:      new Date().toISOString(),
     })
     .where(eq(lcRequests.request_id, id));
 }

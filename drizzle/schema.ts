@@ -63,6 +63,8 @@ export const lcRequests = pgTable("lc_requests", {
   pnl_owner:         varchar("pnl_owner",         { length: 255 }).notNull().default(""),
   region:            varchar("region",            { length: 255 }).notNull().default(""),
   deal_value:        numeric("deal_value",        { precision: 14, scale: 2 }),
+  signed_doc_key:    text("signed_doc_key"),
+  signed_doc_name:   varchar("signed_doc_name",   { length: 255 }),
   current_status:    varchar("current_status",    { length: 128 }).notNull().default("request-raised"),
   status_note:       text("status_note"),
   history_json:      text("history_json"),
