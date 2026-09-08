@@ -1388,6 +1388,7 @@ function RequestsPage() {
   const [region, setRegion]           = useState("");
   const [priority, setPriority]       = useState("Normal (48 hrs)");
   const [deadline, setDeadline]       = useState("");
+  const [dealValue, setDealValue]     = useState("");
   const [desc, setDesc]               = useState("");
   const [docLink, setDocLink]         = useState("");
   const [submittedId, setSubmittedId] = useState<string | null>(null);
@@ -1397,7 +1398,7 @@ function RequestsPage() {
     setName(""); setEmail(""); setDept(""); setType("");
     setCounterParty(""); setCustomerType(""); setIpProduct("");
     setBizSegment(""); setPnlOwner(""); setRegion("");
-    setPriority("Normal (48 hrs)"); setDeadline("");
+    setPriority("Normal (48 hrs)"); setDeadline(""); setDealValue("");
     setDesc(""); setDocLink("");
     setSubmittedId(null); setError(null);
   };
@@ -1407,10 +1408,12 @@ function RequestsPage() {
     onError: (err) => setError(err.message || "Failed to submit request. Please try again."),
   });
 
+  const isNda = type === "NDA Drafting / Review";
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null); setSubmittedId(null);
-    submitMutation.mutate({ name, email, dept, type, counterParty, customerType, ipProduct, bizSegment, pnlOwner, region, priority, deadline, description: desc, docLink, requestedBy: lcUser?.name || lcUser?.email || '' });
+    submitMutation.mutate({ name, email, dept, type, counterParty, customerType, ipProduct, bizSegment, pnlOwner, region, priority, deadline, description: desc, docLink, dealValue: isNda ? '' : dealValue, requestedBy: lcUser?.name || lcUser?.email || '' });
   };
 
   const dynSelect = (vals: string[] | undefined, value: string, onChange: (v: string) => void, required = false) => (
@@ -1502,7 +1505,7 @@ function RequestsPage() {
               {dynSelect(opts?.regions, region, setRegion, true)}
             </div>
 
-            {/* Row 6: Priority + Deadline */}
+            {/* Row 6: Priority + Deal Value */}
             <div className="req-fg">
               <label>Priority</label>
               <select value={priority} onChange={e => setPriority(e.target.value)}>
@@ -1512,8 +1515,28 @@ function RequestsPage() {
               </select>
             </div>
             <div className="req-fg">
+              <label>Deal Value {!isNda && '*'}</label>
+              <div className="req-currency-input">
+                <span>₹</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder={isNda ? "Not applicable for NDAs" : "Amount"}
+                  required={!isNda}
+                  disabled={isNda}
+                  value={isNda ? '' : dealValue}
+                  onChange={e => {
+                    const v = e.target.value.replace(/[^0-9.]/g, '');
+                    setDealValue(v);
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Row 7: Deadline (full width — optional, kept on its own row) */}
+            <div className="req-fg full">
               <label>Deadline</label>
-              <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} />
+              <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} style={{ maxWidth: '240px' }} />
             </div>
 
             {/* Row 7: Description (full width) */}
@@ -1592,6 +1615,12 @@ function fmtTs(iso: string): string {
     + ' · ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 }
 
+function formatInr(value: string): string {
+  const n = parseFloat(value);
+  if (isNaN(n)) return value;
+  return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
 function StatusChip({ status }: { status: string }) {
   const map: Record<string, [string, string]> = {
     'request-raised':        ['ch-p', 'Request Raised'],
@@ -1652,6 +1681,7 @@ interface WfRequest {
   biz_segment: string;
   pnl_owner: string;
   region: string;
+  deal_value: string;
   is_confidential: boolean;
   updated_at: string;
 }
@@ -1772,6 +1802,7 @@ function WfCard({ wf, onUpdate }: { wf: WfRequest; onUpdate: () => void }) {
         {wf.biz_segment && <div className="wf-tag"><b>Business Segment:</b> {wf.biz_segment}</div>}
         {wf.pnl_owner && <div className="wf-tag"><b>PNL Owner:</b> {wf.pnl_owner}</div>}
         {wf.region && <div className="wf-tag"><b>Region:</b> {wf.region}</div>}
+        {wf.deal_value && <div className="wf-tag"><b>Deal Value:</b> {formatInr(wf.deal_value)}</div>}
       </div>
       {wf.description && <div className="wf-desc">{wf.description}</div>}
       <div className="wf-user-row">

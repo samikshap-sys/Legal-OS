@@ -83,6 +83,9 @@ const LC_ADMIN_EMAILS = new Set([
   'farheenansari@gofynd.com',
 ]);
 
+// Deal Value is waived only for this exact Request Type (matches the New Request form's dropdown literal)
+const NDA_REQUEST_TYPE = 'NDA Drafting / Review';
+
 export const legalRouter = router({
 
   /** Dashboard KPI cards */
@@ -301,6 +304,11 @@ export const legalRouter = router({
       docLink:        z.string().default(''),
       requestedBy:    z.string().optional(),
       isConfidential: z.boolean().default(false),
+      dealValue:      z.string().optional(),
+    }).superRefine((val, ctx) => {
+      if (val.type !== NDA_REQUEST_TYPE && !val.dealValue?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['dealValue'], message: 'Deal Value is required unless the request type is NDA Drafting / Review.' });
+      }
     }))
     .mutation(async ({ input }) => {
       const request_id = await insertRequest(input);
@@ -360,6 +368,11 @@ export const legalRouter = router({
       doc_link:         z.string().default(''),
       current_status:   z.string().default('request-raised'),
       is_confidential:  z.boolean().default(false),
+      deal_value:       z.string().optional(),
+    }).superRefine((val, ctx) => {
+      if (val.request_type !== NDA_REQUEST_TYPE && !val.deal_value?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['deal_value'], message: 'Deal Value is required unless the request type is NDA Drafting / Review.' });
+      }
     }))
     .mutation(async ({ input, ctx }) => {
       const lcUser = await getLcUser(ctx.req);

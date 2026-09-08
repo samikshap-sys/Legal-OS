@@ -1,4 +1,4 @@
-import { integer, pgEnum, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { integer, numeric, pgEnum, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 
@@ -62,6 +62,7 @@ export const lcRequests = pgTable("lc_requests", {
   biz_segment:       varchar("biz_segment",       { length: 255 }).notNull().default(""),
   pnl_owner:         varchar("pnl_owner",         { length: 255 }).notNull().default(""),
   region:            varchar("region",            { length: 255 }).notNull().default(""),
+  deal_value:        numeric("deal_value",        { precision: 14, scale: 2 }),
   current_status:    varchar("current_status",    { length: 128 }).notNull().default("request-raised"),
   status_note:       text("status_note"),
   history_json:      text("history_json"),

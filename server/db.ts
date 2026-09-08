@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _schemaEnsured = false;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
@@ -15,7 +16,27 @@ export async function getDb() {
       _db = null;
     }
   }
+  if (_db && !_schemaEnsured) {
+    _schemaEnsured = true;
+    await ensureLegalSchema(_db);
+  }
   return _db;
+}
+
+/**
+ * The live lc_requests table has drifted from drizzle/schema.ts in the past
+ * (columns provisioned outside of drizzle-kit migrations), and this
+ * environment has no working drizzle-kit CLI/DATABASE_URL access to run
+ * `db:push` against production. New columns are instead added here as
+ * idempotent, additive DDL that runs once when the live server (which does
+ * have DATABASE_URL) boots up.
+ */
+async function ensureLegalSchema(db: ReturnType<typeof drizzle>) {
+  try {
+    await db.execute(sql`ALTER TABLE lc_requests ADD COLUMN IF NOT EXISTS deal_value numeric(14,2)`);
+  } catch (error) {
+    console.warn("[Database] ensureLegalSchema failed:", error);
+  }
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {

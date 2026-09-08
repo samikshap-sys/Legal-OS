@@ -967,6 +967,36 @@ input.fsel:focus { border-color: rgba(9,32,69,0.5); box-shadow: 0 0 0 3px rgba(9
 .req-fg select:hover { border-color: #d1d5db; }
 .req-fg select option { background: #ffffff; }
 .req-fg textarea { resize: vertical; min-height: 120px; height: auto !important; }
+.req-currency-input {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 8px;
+  background: #fff;
+  height: 2.6rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.req-currency-input:focus-within {
+  border-color: #092045;
+  box-shadow: 0 0 0 3px rgba(9,32,69,0.08);
+}
+.req-currency-input span {
+  padding: 0 0 0 0.85rem;
+  font-size: 0.87rem;
+  color: #6B7280;
+  font-weight: 600;
+}
+.req-currency-input input {
+  border: 0 !important;
+  box-shadow: none !important;
+  height: 100% !important;
+  flex: 1;
+}
+.req-currency-input input:disabled {
+  background: #F3F4F6;
+  color: #9AA0AB;
+  cursor: not-allowed;
+}
 .req-f-acts {
   display: flex;
   justify-content: flex-end;

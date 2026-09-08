@@ -36,6 +36,7 @@ export interface LegalRequest {
   biz_segment: string;
   pnl_owner: string;
   region: string;
+  deal_value: string;
   is_confidential: boolean;
 }
 
@@ -56,6 +57,7 @@ export interface InsertRequestInput {
   docLink: string;
   requestedBy?: string;
   isConfidential?: boolean;
+  dealValue?: string;
 }
 
 export interface UpdateRequestInput {
@@ -77,6 +79,7 @@ export interface UpdateRequestInput {
   current_status?: string;
   is_confidential?: boolean;
   status_updated_by?: string;
+  deal_value?: string;
 }
 
 // ── Row normaliser ────────────────────────────────────────────────────────────
@@ -105,6 +108,7 @@ function normaliseRow(row: typeof lcRequests.$inferSelect): LegalRequest {
     biz_segment:       row.biz_segment       ?? '',
     pnl_owner:         row.pnl_owner         ?? '',
     region:            row.region            ?? '',
+    deal_value:        row.deal_value        ?? '',
     is_confidential:   Boolean(row.is_confidential),
   };
 }
@@ -185,6 +189,7 @@ export async function insertRequest(d: InsertRequestInput): Promise<string> {
     biz_segment:       d.bizSegment     || '',
     pnl_owner:         d.pnlOwner       || '',
     region:            d.region         || '',
+    deal_value:        d.dealValue      || null,
     is_confidential:   d.isConfidential ? 1 : 0,
     status_updated_by: '',
   });
@@ -233,6 +238,7 @@ export async function updateFullRequest(d: UpdateRequestInput): Promise<void> {
       biz_segment:       d.biz_segment       || '',
       pnl_owner:         d.pnl_owner         || '',
       region:            d.region            || '',
+      deal_value:        d.deal_value        || null,
       priority:          d.priority          || '',
       deadline:          d.deadline          || null,
       description:       d.description       || '',
