@@ -9,6 +9,7 @@ import { publicProcedure, router } from './_core/trpc';
 import { getSheetData, normalizeStatus, getSheetLastFetched } from './legalSheets';
 import { getDisputeChartData, getTMSheetRows, getClaimsByFyndRows, getClaimsAgainstFyndRows } from './disputeSheets';
 import { getRequests, insertRequest, patchRequest, deleteRequest, updateFullRequest, setSignedDoc } from './legalBigQuery';
+import { listDownloadDocs, insertDownloadDoc, deleteDownloadDoc, formatFileSize } from './legalDownloads';
 import { getLcUser } from './lcAuthRouter';
 import { storageGetSignedUrl, storagePut } from './storage';
 
@@ -425,6 +426,57 @@ export const legalRouter = router({
       const { key } = await storagePut(`legal/signed-docs/${input.id}/${input.fileName}`, buffer, input.contentType);
       await setSignedDoc(input.id, key, input.fileName);
       return { key, name: input.fileName };
+    }),
+
+  /** List every document in the Downloads repository */
+  listDownloads: publicProcedure.query(async () => {
+    const rows = await listDownloadDocs();
+    return { rows };
+  }),
+
+  /** Upload a new document into the Downloads repository (admin only) */
+  uploadDownloadDoc: publicProcedure
+    .input(z.object({
+      region:       z.enum(['india', 'mea', 'uk']),
+      category:     z.enum(['agreements', 'kyc']),
+      cardName:     z.string().min(1),
+      fileName:     z.string().min(1),
+      fileBase64:   z.string().min(1),
+      contentType:  z.string().default('application/octet-stream'),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const lcUser = await getLcUser(ctx.req);
+      if (!lcUser || !LC_ADMIN_EMAILS.has(lcUser.email)) {
+        throw new Error('FORBIDDEN: admin access required');
+      }
+      const buffer = Buffer.from(input.fileBase64, 'base64');
+      const { key } = await storagePut(
+        `legal/downloads/${input.region}/${input.category}/${input.cardName}/${input.fileName}`,
+        buffer,
+        input.contentType,
+      );
+      await insertDownloadDoc({
+        region:     input.region,
+        category:   input.category,
+        cardName:   input.cardName,
+        docName:    input.fileName,
+        docSize:    formatFileSize(buffer.length),
+        storageKey: key,
+        uploadedBy: lcUser.name || lcUser.email,
+      });
+      return { ok: true };
+    }),
+
+  /** Remove a document from the Downloads repository (admin only) */
+  deleteDownloadDoc: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const lcUser = await getLcUser(ctx.req);
+      if (!lcUser || !LC_ADMIN_EMAILS.has(lcUser.email)) {
+        throw new Error('FORBIDDEN: admin access required');
+      }
+      await deleteDownloadDoc(input.id);
+      return { ok: true };
     }),
 
   /** Per-reviewer team stats */

@@ -4,7 +4,7 @@
  * Live data from Google Sheets via tRPC
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 // PDF generation is now server-side via /api/lc/pdf/dashboard
 import "../legal-dashboard.css";
 import { trpc } from "@/lib/trpc"
@@ -1054,136 +1054,27 @@ function TeamPage() {
 }
 
 // ── Templates page (document library with multi-select download) ─────────────
-type TemplateDoc = { name: string; size: string; url: string };
+// Cards are admin-uploaded and stored in Postgres (lc_downloads) — see
+// trpc.legal.listDownloads/uploadDownloadDoc/deleteDownloadDoc.
+type TemplateDoc = { name: string; size: string; url: string; docId: number };
 type TemplateCard = {
   id: string;
   name: string;
-  icon: string; // emoji or SVG string
+  icon: string;
   docs: TemplateDoc[];
 };
 
-const INDIA_AGREEMENT_CARDS: TemplateCard[] = [
-  {
-    id: "nda",
-    name: "Non Disclore Agreement",
-    icon: "fa-scale-balanced",
-    docs: [
-      { name: "Mutual NDA Fynd x Other Party.docx", size: "3.7 MB", url: "legal-templates/nda.docx" },
-    ],
-  },
-  {
-    id: "msa",
-    name: "Fynd Commerce MSA (For Enterprise Client)",
-    icon: "fa-building-columns",
-    docs: [
-      { name: "MSA _ Fynd Commerce _ Enterprise Clients.docx", size: "4.1 MB", url: "legal-templates/msa-enterprise.docx" },
-    ],
-  },
-  {
-    id: "service",
-    name: "Service Agreement (Fynd X Reliance)",
-    icon: "fa-scroll",
-    docs: [
-      { name: "Service Agreement _ Fynd X RBL (Fynd Commerce Service).docx", size: "229 KB", url: "legal-templates/service-rbl.docx" },
-    ],
-  },
-  {
-    id: "vendor",
-    name: "Vendor Agreement (Fynd as Service Receiver)",
-    icon: "fa-handshake",
-    docs: [
-      { name: "MSA _ Fynd X Service Provider (Non-SAAS).docx", size: "485 KB", url: "legal-templates/vendor-nonsaas.docx" },
-      { name: "MSA _ Fynd X Service Provider (SAAS).docx", size: "683 KB", url: "legal-templates/vendor-saas.docx" },
-    ],
-  },
-  {
-    id: "3rdparty",
-    name: "3rd Party Contract Resources Agreement",
-    icon: "fa-user-group",
-    docs: [
-      { name: "MSA_ Contractual Resource Template.docx", size: "6.8 MB", url: "legal-templates/3rdparty-resource.docx" },
-    ],
-  },
-  {
-    id: "referral",
-    name: "Referral Partnership (SOW)",
-    icon: "fa-clipboard-list",
-    docs: [
-      { name: "Referral Partnership SOW.docx", size: "736 KB", url: "legal-templates/referral-sow.docx" },
-    ],
-  },
-  {
-    id: "api",
-    name: "API/Integration Partner Agreement",
-    icon: "fa-plug",
-    docs: [
-      { name: "API_Integration_Agreement_Mutual_With_Schedules.docx", size: "4.7 MB", url: "legal-templates/api-integration.docx" },
-    ],
-  },
-  {
-    id: "purchase",
-    name: "Purchase Agreement (for GAAS- Fynd as Seller)",
-    icon: "fa-cart-shopping",
-    docs: [
-      { name: "1. MSA GaaS_ Fynd X Purchaser.docx", size: "1.2 MB", url: "legal-templates/purchase-gaas.docx" },
-    ],
-  },
-  {
-    id: "supplier",
-    name: "Supplier Agreement (for GAAS- Fynd as Purchaser)",
-    icon: "fa-box",
-    docs: [
-      { name: "2. MSA GaaS _ Fynd X Supplier.docx", size: "613 KB", url: "legal-templates/supplier-gaas.docx" },
-    ],
-  },
-  {
-    id: "kiosk",
-    name: "Fynd Kiosk Agreement",
-    icon: "fa-desktop",
-    docs: [
-      { name: "Fynd Kiosk Sale Agreement.docx", size: "484 KB", url: "legal-templates/kiosk-sale.docx" },
-      { name: "Kiosk Sale Warranty Certificate.docx", size: "8.3 MB", url: "legal-templates/kiosk-warranty.docx" },
-    ],
-  },
-  {
-    id: "reseller",
-    name: "Reseller Partnership Agreement",
-    icon: "fa-link",
-    docs: [
-      { name: "Reseller Partner Agreement - Fynd.docx", size: "4.1 MB", url: "legal-templates/reseller.docx" },
-    ],
-  },
-];
-
-const INDIA_KYC_CARDS: TemplateCard[] = [
-  {
-    id: "kyc-docs",
-    name: "KYC Documents / Licenses / Certificates",
-    icon: "fa-id-card",
-    docs: [
-      { name: "COI_SRTL.pdf",                        size: "412 KB",  url: "/manus-storage/COI_SRTLpdf_3aab0537.pdf" },
-      { name: "List of Directors.docx",               size: "3.3 MB",  url: "/manus-storage/ListofDirectors_54b56c76.docx" },
-      { name: "MOA_SRTL.pdf",                         size: "278 KB",  url: "/manus-storage/MOA_SRTL_79a5d8bf.pdf" },
-      { name: "List of Shareholders (Revised).docx",  size: "166 KB",  url: "/manus-storage/ListofShareholder_Revised_5db1bf71.docx" },
-      { name: "AOA_SRTL.pdf",                         size: "497 KB",  url: "/manus-storage/AOA_SRTL_73b25a10.pdf" },
-    ],
-  },
-];
-
-// Middle East / UK — no documents yet; same structure as India, ready to fill in later.
-const MEA_AGREEMENT_CARDS: TemplateCard[] = [];
-const MEA_KYC_CARDS: TemplateCard[] = [];
-const UK_AGREEMENT_CARDS: TemplateCard[] = [];
-const UK_KYC_CARDS: TemplateCard[] = [];
-
 type DocRegion = "india" | "mea" | "uk";
-const DOC_REGIONS: { id: DocRegion; label: string; flag: string; agreements: TemplateCard[]; kyc: TemplateCard[] }[] = [
-  { id: "india", label: "India",       flag: "🇮🇳", agreements: INDIA_AGREEMENT_CARDS, kyc: INDIA_KYC_CARDS },
-  { id: "mea",   label: "Middle East", flag: "🇦🇪", agreements: MEA_AGREEMENT_CARDS,   kyc: MEA_KYC_CARDS },
-  { id: "uk",    label: "UK",          flag: "🇬🇧", agreements: UK_AGREEMENT_CARDS,    kyc: UK_KYC_CARDS },
+const DOC_REGIONS: { id: DocRegion; label: string; flag: string }[] = [
+  { id: "india", label: "India",       flag: "🇮🇳" },
+  { id: "mea",   label: "Middle East", flag: "🇦🇪" },
+  { id: "uk",    label: "UK",          flag: "🇬🇧" },
 ];
 
 function TemplatesPage() {
+  const { lcUser } = useLcUser();
+  const isAdmin = !!(lcUser && LC_ADMIN_EMAILS.has(lcUser.email));
+
   // Two-level nav: region (flag) → doc type (Agreements | KYC Documents)
   type DocTab = "agreements" | "kyc";
   const [region, setRegion] = useState<DocRegion>("india");
@@ -1191,24 +1082,84 @@ function TemplatesPage() {
   const [activeCard, setActiveCard] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [downloading, setDownloading] = useState<Set<string>>(new Set());
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadCardName, setUploadCardName] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const getDownloadUrl = trpc.legal.getDownloadUrl.useMutation();
+  const { data, refetch } = trpc.legal.listDownloads.useQuery();
+  const rows = data?.rows ?? [];
+
+  const uploadMutation = trpc.legal.uploadDownloadDoc.useMutation({
+    onSuccess: () => { setUploading(false); setUploadOpen(false); setUploadCardName(""); setUploadError(null); refetch(); },
+    onError: (err) => { setUploading(false); setUploadError(err.message || 'Upload failed. Please try again.'); },
+  });
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const deleteMutation = trpc.legal.deleteDownloadDoc.useMutation({
+    onSuccess: () => { setConfirmDeleteId(null); refetch(); },
+  });
+
+  const cardsByRegion = useMemo(() => {
+    const map: Record<DocRegion, { agreements: TemplateCard[]; kyc: TemplateCard[] }> = {
+      india: { agreements: [], kyc: [] },
+      mea:   { agreements: [], kyc: [] },
+      uk:    { agreements: [], kyc: [] },
+    };
+    const grouped = new Map<string, TemplateCard>();
+    rows.forEach(r => {
+      const regionKey = r.region as DocRegion;
+      if (!map[regionKey]) return;
+      const cat = r.category === 'kyc' ? 'kyc' : 'agreements';
+      const groupKey = `${regionKey}|${cat}|${r.card_name}`;
+      if (!grouped.has(groupKey)) {
+        const card: TemplateCard = { id: groupKey, name: r.card_name, icon: cat === 'kyc' ? 'fa-id-card' : 'fa-file-lines', docs: [] };
+        grouped.set(groupKey, card);
+        map[regionKey][cat].push(card);
+      }
+      grouped.get(groupKey)!.docs.push({ name: r.doc_name, size: r.doc_size, url: r.storage_key, docId: r.id });
+    });
+    return map;
+  }, [rows]);
 
   const activeRegion = DOC_REGIONS.find(r => r.id === region)!;
-  const cardsForTab = docTab === "kyc" ? activeRegion.kyc : activeRegion.agreements;
+  const cardsForTab = cardsByRegion[region][docTab];
   const card = cardsForTab.find(c => c.id === activeCard) ?? null;
+
+  const handleUploadFile = (file: File) => {
+    if (!uploadCardName.trim()) { setUploadError('Give this document a card name first.'); return; }
+    setUploading(true);
+    setUploadError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '');
+      const base64 = dataUrl.split(',')[1] || '';
+      uploadMutation.mutate({
+        region,
+        category: docTab,
+        cardName: uploadCardName.trim(),
+        fileName: file.name,
+        fileBase64: base64,
+        contentType: file.type || 'application/octet-stream',
+      });
+    };
+    reader.onerror = () => { setUploading(false); setUploadError('Could not read that file.'); };
+    reader.readAsDataURL(file);
+  };
 
   const switchRegion = (r: DocRegion) => {
     setRegion(r);
     setDocTab("agreements");
     setActiveCard(null);
     setSelected(new Set());
+    setUploadOpen(false);
   };
 
   const switchDocTab = (t: DocTab) => {
     setDocTab(t);
     setActiveCard(null);
     setSelected(new Set());
+    setUploadOpen(false);
   };
 
   const handleCardClick = (id: string) => {
@@ -1288,10 +1239,42 @@ function TemplatesPage() {
       </div>
 
       {/* Doc-type sub-navbar */}
-      <div className="doc-subnav">
-        <button className={`doc-subnav-btn${docTab === "agreements" ? " doc-subnav-active" : ""}`} onClick={() => switchDocTab("agreements")}><i className="fa-solid fa-file-lines"></i> Agreements</button>
-        <button className={`doc-subnav-btn${docTab === "kyc" ? " doc-subnav-active" : ""}`} onClick={() => switchDocTab("kyc")}><i className="fa-solid fa-id-card"></i> KYC Documents</button>
+      <div className="doc-subnav" style={{ justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className={`doc-subnav-btn${docTab === "agreements" ? " doc-subnav-active" : ""}`} onClick={() => switchDocTab("agreements")}><i className="fa-solid fa-file-lines"></i> Agreements</button>
+          <button className={`doc-subnav-btn${docTab === "kyc" ? " doc-subnav-active" : ""}`} onClick={() => switchDocTab("kyc")}><i className="fa-solid fa-id-card"></i> KYC Documents</button>
+        </div>
+        {isAdmin && (
+          <button className="doc-subnav-btn" onClick={() => setUploadOpen(o => !o)}>
+            <i className="fa-solid fa-upload"></i> Upload Document
+          </button>
+        )}
       </div>
+
+      {isAdmin && uploadOpen && (
+        <div className="tmpl-panel" style={{ marginBottom: '1.25rem' }}>
+          <div className="tmpl-panel-hd">
+            <span className="tmpl-panel-title">Upload to {activeRegion.label} · {docTab === 'kyc' ? 'KYC Documents' : 'Agreements'}</span>
+            <button className="tmpl-panel-close" onClick={() => { setUploadOpen(false); setUploadError(null); }}>✕</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', padding: '0 0.2rem' }}>
+            <input
+              type="text"
+              placeholder="Card name (e.g. Non Disclosure Agreement)"
+              value={uploadCardName}
+              onChange={e => setUploadCardName(e.target.value)}
+              style={{ padding: '0.55rem 0.75rem', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: '0.85rem' }}
+            />
+            <input
+              type="file"
+              disabled={uploading}
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadFile(f); }}
+            />
+            {uploading && <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Uploading…</span>}
+            {uploadError && <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>{uploadError}</span>}
+          </div>
+        </div>
+      )}
 
       {cardsForTab.length === 0 ? (
         <div className="doc-empty-state">
@@ -1354,6 +1337,20 @@ function TemplatesPage() {
                 >
                   {downloading.has(doc.url) ? "…" : "↓"}
                 </button>
+                {isAdmin && (
+                  <button
+                    className="tmpl-dl-btn"
+                    title={confirmDeleteId === doc.docId ? 'Click again to confirm' : 'Delete'}
+                    style={{ marginLeft: '0.35rem', color: '#dc2626', background: confirmDeleteId === doc.docId ? '#dc2626' : undefined }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirmDeleteId === doc.docId) { deleteMutation.mutate({ id: doc.docId }); }
+                      else { setConfirmDeleteId(doc.docId); }
+                    }}
+                  >
+                    {confirmDeleteId === doc.docId ? <span style={{ color: '#fff' }}>⚠️</span> : '🗑'}
+                  </button>
+                )}
               </div>
             ))}
           </div>

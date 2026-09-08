@@ -76,3 +76,18 @@ export const lcRequests = pgTable("lc_requests", {
 });
 export type LcRequest = typeof lcRequests.$inferSelect;
 export type InsertLcRequest = typeof lcRequests.$inferInsert;
+
+// ── Legal Connect Downloads repository ────────────────────────────────────────
+export const lcDownloads = pgTable("lc_downloads", {
+  id:            serial("id").primaryKey(),
+  region:        varchar("region",      { length: 32  }).notNull(),
+  category:      varchar("category",    { length: 32  }).notNull(),
+  card_name:     varchar("card_name",   { length: 255 }).notNull(),
+  doc_name:      varchar("doc_name",    { length: 255 }).notNull(),
+  doc_size:      varchar("doc_size",    { length: 32  }).notNull().default(""),
+  storage_key:   text("storage_key").notNull(),
+  uploaded_by:   varchar("uploaded_by", { length: 320 }).notNull().default(""),
+  uploaded_at:   varchar("uploaded_at", { length: 64  }).notNull().default(""),
+});
+export type LcDownload = typeof lcDownloads.$inferSelect;
+export type InsertLcDownload = typeof lcDownloads.$inferInsert;
