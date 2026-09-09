@@ -1,29 +1,24 @@
-// Storage helpers backed directly by AWS S3.
-// Uploads go straight to S3 via the SDK; downloads are served through
-// short-lived presigned GET URLs (the bucket itself stays private).
+// Storage helpers backed by Google Cloud Storage, reusing the same
+// GOOGLE_SERVICE_ACCOUNT_JSON credential already used for Sheets access.
+// Uploads go straight to GCS; downloads are served through short-lived
+// signed GET URLs (the bucket itself stays private).
 
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Storage } from "@google-cloud/storage";
 import { ENV } from "./_core/env";
 
-let _client: S3Client | null = null;
+let _storage: Storage | null = null;
 
-function getS3Client(): S3Client {
-  if (!ENV.awsAccessKeyId || !ENV.awsSecretAccessKey || !ENV.awsRegion || !ENV.awsS3Bucket) {
+function getBucket() {
+  if (!ENV.googleServiceAccountJson || !ENV.gcsBucketName) {
     throw new Error(
-      "Storage config missing: set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, and AWS_S3_BUCKET",
+      "Storage config missing: set GOOGLE_SERVICE_ACCOUNT_JSON and GCS_BUCKET_NAME",
     );
   }
-  if (!_client) {
-    _client = new S3Client({
-      region: ENV.awsRegion,
-      credentials: {
-        accessKeyId: ENV.awsAccessKeyId,
-        secretAccessKey: ENV.awsSecretAccessKey,
-      },
-    });
+  if (!_storage) {
+    const credentials = JSON.parse(ENV.googleServiceAccountJson);
+    _storage = new Storage({ credentials });
   }
-  return _client;
+  return _storage.bucket(ENV.gcsBucketName);
 }
 
 function normalizeKey(relKey: string): string {
@@ -42,15 +37,11 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream",
 ): Promise<{ key: string; url: string }> {
-  const client = getS3Client();
+  const bucket = getBucket();
   const key = appendHashSuffix(normalizeKey(relKey));
 
-  await client.send(new PutObjectCommand({
-    Bucket: ENV.awsS3Bucket,
-    Key: key,
-    Body: data,
-    ContentType: contentType,
-  }));
+  const body = typeof data === "string" ? Buffer.from(data) : Buffer.from(data);
+  await bucket.file(key).save(body, { contentType, resumable: false });
 
   return { key, url: `/manus-storage/${key}` };
 }
@@ -61,9 +52,12 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
 }
 
 export async function storageGetSignedUrl(relKey: string): Promise<string> {
-  const client = getS3Client();
+  const bucket = getBucket();
   const key = normalizeKey(relKey);
 
-  const command = new GetObjectCommand({ Bucket: ENV.awsS3Bucket, Key: key });
-  return await getSignedUrl(client, command, { expiresIn: 3600 });
+  const [url] = await bucket.file(key).getSignedUrl({
+    action: "read",
+    expires: Date.now() + 60 * 60 * 1000,
+  });
+  return url;
 }
