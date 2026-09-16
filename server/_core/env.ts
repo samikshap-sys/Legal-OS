@@ -8,7 +8,7 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   googleServiceAccountJson: process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? "",
-  gcsBucketName: process.env.GCS_BUCKET_NAME ?? "",
+  driveFolderId: process.env.DRIVE_FOLDER_ID ?? "",
   qbGoogleClientId: process.env.QB_GOOGLE_CLIENT_ID ?? "",
   qbGoogleClientSecret: process.env.QB_GOOGLE_CLIENT_SECRET ?? "",
   qbSessionSecret: process.env.QB_SESSION_SECRET ?? "qb-session-secret",

@@ -11,7 +11,7 @@ import { getDisputeChartData, getTMSheetRows, getClaimsByFyndRows, getClaimsAgai
 import { getRequests, insertRequest, patchRequest, deleteRequest, updateFullRequest, setSignedDoc } from './legalBigQuery';
 import { listDownloadDocs, insertDownloadDoc, deleteDownloadDoc, formatFileSize } from './legalDownloads';
 import { getLcUser } from './lcAuthRouter';
-import { storageGetSignedUrl, storagePut } from './storage';
+import { storagePut } from './storage';
 
 // ─── Slack notification helper ───────────────────────────────────────────────
 const LC_SLACK_CHANNEL = 'C0B40G1E02C'; // #legal-connect-requests
@@ -399,14 +399,13 @@ export const legalRouter = router({
       return { ok: true };
     }),
 
-  /** Generate a fresh presigned download URL for a storage key */
+  /** Resolve a storage key to our own download-proxy URL */
   getDownloadUrl: publicProcedure
     .input(z.object({ key: z.string() }))
     .mutation(async ({ input }) => {
       // Strip leading /manus-storage/ prefix if present
       const key = input.key.replace(/^\/manus-storage\//, '');
-      const url = await storageGetSignedUrl(key);
-      return { url };
+      return { url: `/api/download?key=${encodeURIComponent(key)}` };
     }),
 
   /** Upload the signed/executed copy of a request's document (admin only) */

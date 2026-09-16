@@ -1,24 +1,32 @@
-// Storage helpers backed by Google Cloud Storage, reusing the same
+// Storage helpers backed by Google Drive, reusing the same
 // GOOGLE_SERVICE_ACCOUNT_JSON credential already used for Sheets access.
-// Uploads go straight to GCS; downloads are served through short-lived
-// signed GET URLs (the bucket itself stays private).
+// Uploads go into a single Drive folder shared with the service account
+// as Editor (sidesteps GCP bucket IAM entirely — folder sharing is a
+// plain "Share" action, not a project-level permission grant). Downloads
+// are streamed back through our own server so the folder never needs to
+// be made public.
 
-import { Storage } from "@google-cloud/storage";
+import { Readable } from "stream";
+import { google } from "googleapis";
 import { ENV } from "./_core/env";
 
-let _storage: Storage | null = null;
+let _drive: ReturnType<typeof google.drive> | null = null;
 
-function getBucket() {
-  if (!ENV.googleServiceAccountJson || !ENV.gcsBucketName) {
+function getDrive() {
+  if (!ENV.googleServiceAccountJson || !ENV.driveFolderId) {
     throw new Error(
-      "Storage config missing: set GOOGLE_SERVICE_ACCOUNT_JSON and GCS_BUCKET_NAME",
+      "Storage config missing: set GOOGLE_SERVICE_ACCOUNT_JSON and DRIVE_FOLDER_ID",
     );
   }
-  if (!_storage) {
+  if (!_drive) {
     const credentials = JSON.parse(ENV.googleServiceAccountJson);
-    _storage = new Storage({ credentials });
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/drive"],
+    });
+    _drive = google.drive({ version: "v3", auth });
   }
-  return _storage.bucket(ENV.gcsBucketName);
+  return _drive;
 }
 
 function normalizeKey(relKey: string): string {
@@ -32,16 +40,42 @@ function appendHashSuffix(relKey: string): string {
   return `${relKey.slice(0, lastDot)}_${hash}${relKey.slice(lastDot)}`;
 }
 
+// Drive files aren't addressed by nested paths, so the "/"-separated key
+// (which still encodes region/category/name for readability) is flattened
+// into a single Drive filename. The real organisation lives in Postgres
+// (lc_downloads / lc_requests columns), not in Drive folder structure.
+function toDriveName(key: string): string {
+  return key.replace(/\//g, "__");
+}
+
+async function findFileId(driveName: string): Promise<string> {
+  const drive = getDrive();
+  const escaped = driveName.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+  const res = await drive.files.list({
+    q: `name = '${escaped}' and '${ENV.driveFolderId}' in parents and trashed = false`,
+    fields: "files(id)",
+    spaces: "drive",
+  });
+  const file = res.data.files?.[0];
+  if (!file?.id) throw new Error(`File not found in Drive: ${driveName}`);
+  return file.id;
+}
+
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream",
 ): Promise<{ key: string; url: string }> {
-  const bucket = getBucket();
+  const drive = getDrive();
   const key = appendHashSuffix(normalizeKey(relKey));
-
+  const driveName = toDriveName(key);
   const body = typeof data === "string" ? Buffer.from(data) : Buffer.from(data);
-  await bucket.file(key).save(body, { contentType, resumable: false });
+
+  await drive.files.create({
+    requestBody: { name: driveName, parents: [ENV.driveFolderId] },
+    media: { mimeType: contentType, body: Readable.from(body) },
+    fields: "id",
+  });
 
   return { key, url: `/manus-storage/${key}` };
 }
@@ -51,13 +85,20 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
   return { key, url: `/manus-storage/${key}` };
 }
 
-export async function storageGetSignedUrl(relKey: string): Promise<string> {
-  const bucket = getBucket();
+export async function storageGetStream(
+  relKey: string,
+): Promise<{ stream: NodeJS.ReadableStream; contentType: string; size?: number }> {
+  const drive = getDrive();
   const key = normalizeKey(relKey);
+  const driveName = toDriveName(key);
+  const fileId = await findFileId(driveName);
 
-  const [url] = await bucket.file(key).getSignedUrl({
-    action: "read",
-    expires: Date.now() + 60 * 60 * 1000,
-  });
-  return url;
+  const meta = await drive.files.get({ fileId, fields: "mimeType, size" });
+  const resp = await drive.files.get({ fileId, alt: "media" }, { responseType: "stream" });
+
+  return {
+    stream: resp.data as unknown as NodeJS.ReadableStream,
+    contentType: meta.data.mimeType || "application/octet-stream",
+    size: meta.data.size ? Number(meta.data.size) : undefined,
+  };
 }
