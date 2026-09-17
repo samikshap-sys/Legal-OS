@@ -48,6 +48,20 @@ function toDriveName(key: string): string {
   return key.replace(/\//g, "__");
 }
 
+function describeGoogleError(err: unknown): Error {
+  const e = err as {
+    message?: string;
+    response?: { data?: unknown; status?: number };
+    errors?: unknown;
+  };
+  const detail = JSON.stringify({
+    status: e?.response?.status,
+    data: e?.response?.data,
+    errors: e?.errors,
+  });
+  return new Error(`${e?.message ?? "Unknown Drive error"} | detail=${detail}`);
+}
+
 async function findFileId(driveName: string): Promise<string> {
   const drive = getDrive();
   const escaped = driveName.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
@@ -74,12 +88,16 @@ export async function storagePut(
   const driveName = toDriveName(key);
   const body = typeof data === "string" ? Buffer.from(data) : Buffer.from(data);
 
-  await drive.files.create({
-    requestBody: { name: driveName, parents: [ENV.driveFolderId] },
-    media: { mimeType: contentType, body: Readable.from(body) },
-    fields: "id",
-    supportsAllDrives: true,
-  });
+  try {
+    await drive.files.create({
+      requestBody: { name: driveName, parents: [ENV.driveFolderId] },
+      media: { mimeType: contentType, body: Readable.from(body) },
+      fields: "id",
+      supportsAllDrives: true,
+    });
+  } catch (err) {
+    throw describeGoogleError(err);
+  }
 
   return { key, url: `/manus-storage/${key}` };
 }
