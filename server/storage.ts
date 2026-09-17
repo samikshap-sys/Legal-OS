@@ -55,6 +55,9 @@ async function findFileId(driveName: string): Promise<string> {
     q: `name = '${escaped}' and '${ENV.driveFolderId}' in parents and trashed = false`,
     fields: "files(id)",
     spaces: "drive",
+    corpora: "allDrives",
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true,
   });
   const file = res.data.files?.[0];
   if (!file?.id) throw new Error(`File not found in Drive: ${driveName}`);
@@ -75,6 +78,7 @@ export async function storagePut(
     requestBody: { name: driveName, parents: [ENV.driveFolderId] },
     media: { mimeType: contentType, body: Readable.from(body) },
     fields: "id",
+    supportsAllDrives: true,
   });
 
   return { key, url: `/manus-storage/${key}` };
@@ -93,8 +97,11 @@ export async function storageGetStream(
   const driveName = toDriveName(key);
   const fileId = await findFileId(driveName);
 
-  const meta = await drive.files.get({ fileId, fields: "mimeType, size" });
-  const resp = await drive.files.get({ fileId, alt: "media" }, { responseType: "stream" });
+  const meta = await drive.files.get({ fileId, fields: "mimeType, size", supportsAllDrives: true });
+  const resp = await drive.files.get(
+    { fileId, alt: "media", supportsAllDrives: true },
+    { responseType: "stream" },
+  );
 
   return {
     stream: resp.data as unknown as NodeJS.ReadableStream,
