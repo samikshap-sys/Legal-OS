@@ -89,10 +89,16 @@ export async function storagePut(
   const body = typeof data === "string" ? Buffer.from(data) : Buffer.from(data);
 
   try {
-    await drive.files.create({
+    const created = await drive.files.create({
       requestBody: { name: driveName, parents: [ENV.driveFolderId] },
-      media: { mimeType: contentType, body: Readable.from(body) },
       fields: "id",
+      supportsAllDrives: true,
+    });
+    const fileId = created.data.id;
+    if (!fileId) throw new Error("Drive did not return a file id on create");
+    await drive.files.update({
+      fileId,
+      media: { mimeType: contentType, body: Readable.from(body) },
       supportsAllDrives: true,
     });
   } catch (err) {
