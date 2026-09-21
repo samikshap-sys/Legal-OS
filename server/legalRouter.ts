@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { publicProcedure, router } from './_core/trpc';
 import { getSheetData, normalizeStatus, getSheetLastFetched } from './legalSheets';
 import { getDisputeChartData, getTMSheetRows, getClaimsByFyndRows, getClaimsAgainstFyndRows } from './disputeSheets';
-import { getRequests, insertRequest, patchRequest, deleteRequest, updateFullRequest, setSignedDoc } from './legalBigQuery';
+import { getRequests, insertRequest, patchRequest, deleteRequest, updateFullRequest, setSignedDoc, type LegalRequest } from './legalBigQuery';
 import { listDownloadDocs, insertDownloadDoc, deleteDownloadDoc, formatFileSize } from './legalDownloads';
 import { getLcUser } from './lcAuthRouter';
 import { storagePut } from './storage';
@@ -86,6 +86,85 @@ const LC_ADMIN_EMAILS = new Set([
 
 // Deal Value is waived only for this exact Request Type (matches the New Request form's dropdown literal)
 const NDA_REQUEST_TYPE = 'NDA Drafting / Review';
+
+// ─── Live Tracker: unify Google Sheet rows (history) with Postgres Workflow requests (going forward) ──
+interface TrackerRow {
+  Request_Date: string;
+  Brand_Name: string;
+  Customer_Type: string;
+  Business_Segment: string;
+  Document_type: string;
+  Current_Status: string;
+  End_Date: string;
+  Deal_Value: string;
+  Ageing: string;
+  Reviewer: string;
+  Signed_Doc_Link: string;
+  Drive_Doc_URL: string;
+}
+
+function mapSheetRow(r: Record<string, string>): TrackerRow {
+  return {
+    Request_Date:     r['Request Date'] || '',
+    Brand_Name:       r['Counter Party Legal Name'] || '',
+    Customer_Type:    r['Counter Party Type'] || '',
+    Business_Segment: r['Business Segment'] || '',
+    Document_type:    r['Document Type'] || '',
+    Current_Status:   normalizeStatus(r['Status'] || ''),
+    End_Date:         r['Last Updated'] || '',
+    Deal_Value:       r['Deal Value'] || '',
+    Ageing:           r['Ageing'] || '',
+    Reviewer:         r['Reviewer'] || '',
+    Signed_Doc_Link:  r['Signed Doc Link'] || '',
+    Drive_Doc_URL:    r['Link'] || '',
+  };
+}
+
+// Collapses Workflow's granular stage id into Live Tracker's coarse status vocabulary
+const WORKFLOW_STATUS_MAP: Record<string, string> = {
+  'executed':           'Closed',
+  'rejected':            'Closed',
+  'on-hold':             'On Hold',
+  'pending-business':    'Pending',
+  'pending-finance':     'Pending',
+  'pending-client':      'Pending',
+  'sent-for-signature':  'Pending',
+  'request-raised':      'Open',
+  'under-legal-review':  'Open',
+};
+
+function collapseWorkflowStatus(stage: string): string {
+  return WORKFLOW_STATUS_MAP[stage] || 'Open';
+}
+
+function computeAgeing(submittedAt: string, updatedAt: string, currentStatus: string): string {
+  const start = new Date(submittedAt).getTime();
+  if (isNaN(start)) return '';
+  const endTime = currentStatus === 'executed' ? new Date(updatedAt).getTime() : Date.now();
+  const end = isNaN(endTime) ? Date.now() : endTime;
+  const days = Math.max(0, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+  return String(days);
+}
+
+function mapPgRow(d: LegalRequest): TrackerRow {
+  const signedDocUrl = d.signed_doc_key
+    ? `/api/download?key=${encodeURIComponent(d.signed_doc_key)}&name=${encodeURIComponent(d.signed_doc_name || d.signed_doc_key)}`
+    : '';
+  return {
+    Request_Date:     d.submitted_at,
+    Brand_Name:       d.counter_party,
+    Customer_Type:    d.customer_type,
+    Business_Segment: d.biz_segment,
+    Document_type:    d.request_type,
+    Current_Status:   collapseWorkflowStatus(d.current_status),
+    End_Date:         d.updated_at,
+    Deal_Value:       d.deal_value,
+    Ageing:           computeAgeing(d.submitted_at, d.updated_at, d.current_status),
+    Reviewer:         d.status_updated_by || d.requested_by,
+    Signed_Doc_Link:  d.signed_doc_name,
+    Drive_Doc_URL:    signedDocUrl,
+  };
+}
 
 export const legalRouter = router({
 
@@ -193,17 +272,21 @@ export const legalRouter = router({
       search:       z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      let rows = await getSheetData();
       const i = input || {};
+      const [sheetRows, pgRequests] = await Promise.all([getSheetData(), getRequests()]);
+      let rows: TrackerRow[] = [
+        ...sheetRows.map(mapSheetRow),
+        ...pgRequests.map(mapPgRow),
+      ];
 
-      if (i.status)       rows = rows.filter(r => normalizeStatus(r['Status'] || '') === i.status);
-      if (i.segment)      rows = rows.filter(r => (r['Business Segment'] || '').trim() === i.segment);
-      if (i.docType)      rows = rows.filter(r => (r['Document Type'] || '').trim() === i.docType);
-      if (i.customerType) rows = rows.filter(r => (r['Counter Party Type'] || '').trim() === i.customerType);
+      if (i.status)       rows = rows.filter(r => r.Current_Status === i.status);
+      if (i.segment)      rows = rows.filter(r => r.Business_Segment === i.segment);
+      if (i.docType)      rows = rows.filter(r => r.Document_type === i.docType);
+      if (i.customerType) rows = rows.filter(r => r.Customer_Type === i.customerType);
       if (i.search) {
         const q = i.search.toLowerCase();
         rows = rows.filter(r =>
-          Object.values(r).some(v => v.toLowerCase().includes(q))
+          Object.values(r).some(v => String(v).toLowerCase().includes(q))
         );
       }
 
@@ -212,28 +295,15 @@ export const legalRouter = router({
         return isNaN(t) ? 0 : t;
       };
       rows = [...rows].sort((a, b) =>
-        parseRequestDate(b['Request Date'] || '') - parseRequestDate(a['Request Date'] || '')
+        parseRequestDate(b.Request_Date) - parseRequestDate(a.Request_Date)
       );
 
-      return rows.map(r => ({
-        Request_Date:     r['Request Date'] || '',
-        Brand_Name:       r['Counter Party Legal Name'] || '',
-        Customer_Type:    r['Counter Party Type'] || '',
-        Business_Segment: r['Business Segment'] || '',
-        Document_type:    r['Document Type'] || '',
-        Current_Status:   normalizeStatus(r['Status'] || ''),
-        End_Date:         r['Last Updated'] || '',
-        Deal_Value:       r['Deal Value'] || '',
-        Ageing:           r['Ageing'] || '',
-        Reviewer:         r['Reviewer'] || '',
-        Signed_Doc_Link:  r['Signed Doc Link'] || '',
-        Drive_Doc_URL:    r['Link'] || '',
-      }));
+      return rows;
     }),
 
   /** Filter options for Live Tracker dropdowns */
   filterOptions: publicProcedure.query(async () => {
-    const rows = await getSheetData();
+    const [rows, pgRequests] = await Promise.all([getSheetData(), getRequests()]);
     const segments  = new Set<string>();
     const docTypes  = new Set<string>();
     const custTypes = new Set<string>();
@@ -242,6 +312,14 @@ export const legalRouter = router({
       const seg = (r['Business Segment'] || '').trim();
       const dt  = (r['Document Type'] || '').trim();
       const ct  = (r['Counter Party Type'] || '').trim();
+      if (seg) segments.add(seg);
+      if (dt)  docTypes.add(dt);
+      if (ct)  custTypes.add(ct);
+    }
+    for (const d of pgRequests) {
+      const seg = (d.biz_segment || '').trim();
+      const dt  = (d.request_type || '').trim();
+      const ct  = (d.customer_type || '').trim();
       if (seg) segments.add(seg);
       if (dt)  docTypes.add(dt);
       if (ct)  custTypes.add(ct);

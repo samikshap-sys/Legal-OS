@@ -419,7 +419,7 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
 
 // ── Fynd's IPR page (Trade Mark Sheet, moved off the Dashboard) ────────────
 function IPRPage() {
-  const { data: tmRows } = trpc.legal.tmSheetRows.useQuery();
+  const { data: tmRows, error: tmError } = trpc.legal.tmSheetRows.useQuery();
   const [tmPage, setTmPage] = useState(1);
   const TM_PAGE_SIZE = 7;
 
@@ -437,7 +437,11 @@ function IPRPage() {
           {tmRows && <span className="lc-chip">{tmRows.length} RECORDS</span>}
         </div>
         <div className="lc-card-sub">Registered &amp; in-process trademarks — up to Valid Upto</div>
-        {!tmRows ? (
+        {tmError ? (
+          <div style={{ color: '#b91c1c', fontSize: '0.85rem', padding: '1rem 0' }}>
+            Couldn't load the Trade Mark sheet — {tmError.message}
+          </div>
+        ) : !tmRows ? (
           <div className="lc-loading">Loading…</div>
         ) : (() => {
           const tmTotalPages = Math.max(1, Math.ceil(tmRows.length / TM_PAGE_SIZE));
@@ -523,8 +527,8 @@ function LitStatusPill({ status }: { status: string }) {
 }
 
 function LitigationPage() {
-  const { data: byFyndRows }      = trpc.legal.claimsByFyndRows.useQuery();
-  const { data: againstFyndRows } = trpc.legal.claimsAgainstFyndRows.useQuery();
+  const { data: byFyndRows,      error: byFyndError }      = trpc.legal.claimsByFyndRows.useQuery();
+  const { data: againstFyndRows, error: againstFyndError } = trpc.legal.claimsAgainstFyndRows.useQuery();
 
   return (
     <div className="lc-pg-content">
@@ -540,7 +544,11 @@ function LitigationPage() {
           {byFyndRows && <span className="lc-chip">{byFyndRows.length} CLAIMS</span>}
         </div>
         <div className="lc-card-sub">Claims raised by Fynd against counterparties</div>
-        {!byFyndRows ? (
+        {byFyndError ? (
+          <div style={{ color: '#b91c1c', fontSize: '0.85rem', padding: '1rem 0' }}>
+            Couldn't load this sheet — {byFyndError.message}
+          </div>
+        ) : !byFyndRows ? (
           <div className="lc-loading">Loading…</div>
         ) : byFyndRows.length === 0 ? (
           <div style={{ color: '#9aa0ab', fontSize: '0.85rem', padding: '1rem 0' }}>No claims on record.</div>
@@ -591,7 +599,11 @@ function LitigationPage() {
           {againstFyndRows && <span className="lc-chip">{againstFyndRows.length} CLAIMS</span>}
         </div>
         <div className="lc-card-sub">Claims raised against Fynd by counterparties</div>
-        {!againstFyndRows ? (
+        {againstFyndError ? (
+          <div style={{ color: '#b91c1c', fontSize: '0.85rem', padding: '1rem 0' }}>
+            Couldn't load this sheet — {againstFyndError.message}
+          </div>
+        ) : !againstFyndRows ? (
           <div className="lc-loading">Loading…</div>
         ) : againstFyndRows.length === 0 ? (
           <div style={{ color: '#9aa0ab', fontSize: '0.85rem', padding: '1rem 0' }}>No claims on record.</div>
@@ -747,6 +759,7 @@ function TrackerPage() {
             <option>Open</option>
             <option>Closed</option>
             <option>On Hold</option>
+            <option>Pending</option>
           </select>
           <select className="trk-fsel" value={segment} onChange={e => setSegment(e.target.value)}>
             <option value="">Segments</option>
@@ -798,7 +811,7 @@ function TrackerPage() {
                           // Prefer the Drive URL from column Q (Remarks/Email Thread), fall back to col P filename
                           const driveUrl = String((r as any).Drive_Doc_URL || "");
                           const filename = String((r as any).Signed_Doc_Link || "");
-                          const isValidUrl = (s: string) => s.startsWith('http://') || s.startsWith('https://');
+                          const isValidUrl = (s: string) => s.startsWith('http://') || s.startsWith('https://') || s.startsWith('/api/download');
 
                           if (isValidUrl(driveUrl)) {
                             // Column Q has a real Drive URL — open it directly
