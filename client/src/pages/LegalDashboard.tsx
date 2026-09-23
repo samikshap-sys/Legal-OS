@@ -39,7 +39,7 @@ ChartJS.register(
 );
 
 // ── Sidebar nav items ──────────────────────────────────────────────────────
-type Page = "dashboard" | "tracker" | "requests" | "workflows" | "team" | "templates" | "fynds-ipr" | "litigation" | "user-management";
+type Page = "dashboard" | "tracker" | "requests" | "workflows" | "team" | "templates" | "fynds-ipr" | "litigation" | "nexus-one" | "user-management";
 
 // Admin emails — only these users can update status and delete workflow cards
 const LC_ADMIN_EMAILS = new Set([
@@ -640,6 +640,27 @@ function LitigationPage() {
             </table>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Nexus One page ──────────────────────────────────────────────────────────
+function NexusOnePage() {
+  return (
+    <div className="lc-pg-content">
+      {/* Page header */}
+      <div className="lc-ph-row">
+        <h1 className="lc-ph-h">Nexus One</h1>
+      </div>
+
+      <div className="lc-card" style={{ marginBottom: "1.5rem" }}>
+        <div className="lc-card-hd">
+          <span className="lc-card-title">Nexus One</span>
+        </div>
+        <div style={{ color: '#9aa0ab', fontSize: '0.85rem', padding: '2rem 0', textAlign: 'center' }}>
+          No data yet — this tab is ready for Nexus One's records.
+        </div>
       </div>
     </div>
   );
@@ -2078,6 +2099,7 @@ export default function LegalDashboard() {
     templates:       <TemplatesPage />,
     "fynds-ipr":     <IPRPage />,
     litigation:      <LitigationPage />,
+    "nexus-one":     <NexusOnePage />,
     "user-management": <LegalUserManagement />,
   };
 
@@ -2150,6 +2172,15 @@ export default function LegalDashboard() {
           >
             <i className="fa-solid fa-gavel"></i>
             <span>Litigation</span>
+          </button>
+          {/* Nexus One */}
+          <button
+            className={`lc-sbi${activePage === "nexus-one" ? " active" : ""}`}
+            onClick={() => setActivePage("nexus-one")}
+            title="Nexus One"
+          >
+            <img src="/nexus-one-logo.png" alt="Nexus One" className="lc-sbi-brand-logo" />
+            <span>Nexus One</span>
           </button>
           {/* Team — last (informational, not operational) */}
           {hasScope("team") && (
