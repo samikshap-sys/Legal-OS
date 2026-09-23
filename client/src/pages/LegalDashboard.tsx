@@ -303,6 +303,7 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
       { label: "Open",    data: regions.map(r => pickCnt(r, "Open")),    backgroundColor: "#092045", borderRadius: 4, barThickness: 22 },
       { label: "Closed",  data: regions.map(r => pickCnt(r, "Closed")),  backgroundColor: "#030B18", borderRadius: 4, barThickness: 22 },
       { label: "On Hold", data: regions.map(r => pickCnt(r, "On Hold")), backgroundColor: "#3B5A85", borderRadius: 4, barThickness: 22 },
+      { label: "Pending", data: regions.map(r => pickCnt(r, "Pending")), backgroundColor: "#F6E5BC", borderRadius: 4, barThickness: 22 },
     ],
   } : null;
 
@@ -405,7 +406,7 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
             <span className="lc-card-title">Agreement Status by Region</span>
             <span className="lc-chip lc-chip-live">LIVE</span>
           </div>
-          <div className="lc-card-sub">Open vs Closed vs On Hold per region</div>
+          <div className="lc-card-sub">Open vs Closed vs On Hold vs Pending per region</div>
           <div style={{ height: 280 }}>
             {regionBarData ? <Bar data={regionBarData} options={regionBarOptions} /> : <div className="lc-loading">Loading…</div>}
           </div>
@@ -944,6 +945,7 @@ function TeamPage() {
               <th>OPEN</th>
               <th>CLOSED</th>
               <th>ON HOLD</th>
+              <th>PENDING</th>
               <th>RESOLVED</th>
               <th>WORKLOAD</th>
             </tr>
@@ -965,6 +967,7 @@ function TeamPage() {
                   <td className="team-td-blue">{m.open_count}</td>
                   <td>{m.closed_count}</td>
                   <td>{m.on_hold_count}</td>
+                  <td>{m.pending_count}</td>
                   <td className="team-td-resolved">{resolvedPct}%</td>
                   <td>
                     <div className="team-wl-cell">
@@ -1010,9 +1013,10 @@ function TeamPage() {
               <div className="team-mc-bar-wrap">
                 {m.total > 0 && (
                   <>
-                    <div className="team-mc-bar-closed" style={{ width: `${Math.round((m.closed_count / m.total) * 100)}%` }} />
-                    <div className="team-mc-bar-open"   style={{ width: `${Math.round((m.open_count   / m.total) * 100)}%` }} />
-                    <div className="team-mc-bar-hold"   style={{ width: `${Math.round((m.on_hold_count / m.total) * 100)}%` }} />
+                    <div className="team-mc-bar-closed"  style={{ width: `${Math.round((m.closed_count  / m.total) * 100)}%` }} />
+                    <div className="team-mc-bar-open"    style={{ width: `${Math.round((m.open_count    / m.total) * 100)}%` }} />
+                    <div className="team-mc-bar-hold"    style={{ width: `${Math.round((m.on_hold_count / m.total) * 100)}%` }} />
+                    <div className="team-mc-bar-pending" style={{ width: `${Math.round((m.pending_count / m.total) * 100)}%` }} />
                   </>
                 )}
               </div>
@@ -1020,6 +1024,7 @@ function TeamPage() {
                 <span className="team-mc-leg-item closed">{m.closed_count} Closed</span>
                 <span className="team-mc-leg-item open">{m.open_count} Open</span>
                 <span className="team-mc-leg-item hold">{m.on_hold_count} On Hold</span>
+                <span className="team-mc-leg-item pending">{m.pending_count} Pending</span>
               </div>
 
               {/* Stat boxes */}

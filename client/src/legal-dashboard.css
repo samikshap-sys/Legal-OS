@@ -1414,9 +1414,10 @@ input.fsel:focus { border-color: rgba(9,32,69,0.5); box-shadow: 0 0 0 3px rgba(9
   display: flex;
   margin-bottom: 0.4rem;
 }
-.team-mc-bar-closed { background: #1C1C1E; height: 100%; transition: width 0.5s; }
-.team-mc-bar-open   { background: #092045; height: 100%; transition: width 0.5s; }
-.team-mc-bar-hold   { background: #FFB399; height: 100%; transition: width 0.5s; }
+.team-mc-bar-closed  { background: #1C1C1E; height: 100%; transition: width 0.5s; }
+.team-mc-bar-open    { background: #092045; height: 100%; transition: width 0.5s; }
+.team-mc-bar-hold    { background: #FFB399; height: 100%; transition: width 0.5s; }
+.team-mc-bar-pending { background: #F6E5BC; height: 100%; transition: width 0.5s; }
 
 .team-mc-legend { display: flex; gap: 0.75rem; margin-bottom: 0.85rem; }
 .team-mc-leg-item {
@@ -1433,9 +1434,10 @@ input.fsel:focus { border-color: rgba(9,32,69,0.5); box-shadow: 0 0 0 3px rgba(9
   height: 8px;
   border-radius: 50%;
 }
-.team-mc-leg-item.closed::before { background: #1C1C1E; }
-.team-mc-leg-item.open::before   { background: #092045; }
-.team-mc-leg-item.hold::before   { background: #FFB399; }
+.team-mc-leg-item.closed::before  { background: #1C1C1E; }
+.team-mc-leg-item.open::before    { background: #092045; }
+.team-mc-leg-item.hold::before    { background: #FFB399; }
+.team-mc-leg-item.pending::before { background: #F6E5BC; }
 
 .team-mc-stats {
   display: grid;

@@ -101,6 +101,7 @@ interface TrackerRow {
   Reviewer: string;
   Signed_Doc_Link: string;
   Drive_Doc_URL: string;
+  Description_Docs: string;
 }
 
 function mapSheetRow(r: Record<string, string>): TrackerRow {
@@ -117,6 +118,7 @@ function mapSheetRow(r: Record<string, string>): TrackerRow {
     Reviewer:         r['Reviewer'] || '',
     Signed_Doc_Link:  r['Signed Doc Link'] || '',
     Drive_Doc_URL:    r['Link'] || '',
+    Description_Docs: r['Description (Docs)'] || '',
   };
 }
 
@@ -163,25 +165,32 @@ function mapPgRow(d: LegalRequest): TrackerRow {
     Reviewer:         d.status_updated_by || d.requested_by,
     Signed_Doc_Link:  d.signed_doc_name,
     Drive_Doc_URL:    signedDocUrl,
+    Description_Docs: d.description,
   };
+}
+
+// Google Sheet history + Postgres Workflow requests, unified — the single source every
+// Dashboard/Live Tracker/Team procedure below reads from, so none of them silently drift
+// out of sync as new requests move from the Sheet to the Workflow system.
+async function getMergedTrackerRows(): Promise<TrackerRow[]> {
+  const [sheetRows, pgRequests] = await Promise.all([getSheetData(), getRequests()]);
+  return [...sheetRows.map(mapSheetRow), ...pgRequests.map(mapPgRow)];
 }
 
 export const legalRouter = router({
 
   /** Dashboard KPI cards */
   kpis: publicProcedure.query(async () => {
-    const rows = await getSheetData();
+    const rows = await getMergedTrackerRows();
     let open_count = 0, closed_count = 0, on_hold_count = 0, pending_count = 0;
     const reviewers = new Set<string>();
 
     for (const r of rows) {
-      const s   = normalizeStatus(r['Status'] || '');
-      const raw = (r['Status'] || '').toLowerCase().trim();
-      if (s === 'Open')        open_count++;
-      else if (s === 'Closed') closed_count++;
-      else if (s === 'On Hold') on_hold_count++;
-      else if (raw.startsWith('pending')) pending_count++;
-      const rev = (r['Reviewer'] || '').trim();
+      if (r.Current_Status === 'Open')         open_count++;
+      else if (r.Current_Status === 'Closed')  closed_count++;
+      else if (r.Current_Status === 'On Hold') on_hold_count++;
+      else if (r.Current_Status === 'Pending') pending_count++;
+      const rev = (r.Reviewer || '').trim();
       if (rev) reviewers.add(rev);
     }
 
@@ -197,11 +206,10 @@ export const legalRouter = router({
 
   /** Donut chart: contract status breakdown */
   chartStatus: publicProcedure.query(async () => {
-    const rows = await getSheetData();
+    const rows = await getMergedTrackerRows();
     const counts: Record<string, number> = {};
     for (const r of rows) {
-      const s = normalizeStatus(r['Status'] || '');
-      if (s) counts[s] = (counts[s] || 0) + 1;
+      if (r.Current_Status) counts[r.Current_Status] = (counts[r.Current_Status] || 0) + 1;
     }
     return Object.entries(counts)
       .map(([status, cnt]) => ({ status, cnt }))
@@ -210,10 +218,10 @@ export const legalRouter = router({
 
   /** Bar chart: top 6 document types */
   chartDoctypes: publicProcedure.query(async () => {
-    const rows = await getSheetData();
+    const rows = await getMergedTrackerRows();
     const counts: Record<string, number> = {};
     for (const r of rows) {
-      const dt = (r['Document Type'] || '').trim();
+      const dt = (r.Document_type || '').trim();
       if (dt) counts[dt] = (counts[dt] || 0) + 1;
     }
     return Object.entries(counts)
@@ -222,13 +230,13 @@ export const legalRouter = router({
       .slice(0, 6);
   }),
 
-  /** Stacked bar: Open/Closed/On Hold per region (Business Segment) */
+  /** Stacked bar: Open/Closed/On Hold/Pending per region (Business Segment) */
   chartRegionStatus: publicProcedure.query(async () => {
-    const rows = await getSheetData();
+    const rows = await getMergedTrackerRows();
     const counts: Record<string, number> = {};
     for (const r of rows) {
-      const region = (r['Business Segment'] || '').trim() || 'Unknown';
-      const status = normalizeStatus(r['Status'] || '');
+      const region = (r.Business_Segment || '').trim() || 'Unknown';
+      const status = r.Current_Status;
       if (!status) continue;
       const key = `${region}|${status}`;
       counts[key] = (counts[key] || 0) + 1;
@@ -243,22 +251,22 @@ export const legalRouter = router({
 
   /** Last 10 contracts for dashboard table */
   recent: publicProcedure.query(async () => {
-    let rows = await getSheetData();
+    const rows = await getMergedTrackerRows();
     const parseRequestDate = (s: string) => {
       const t = new Date(s).getTime();
       return isNaN(t) ? 0 : t;
     };
-    rows = [...rows].sort((a, b) =>
-      parseRequestDate(b['Request Date'] || '') - parseRequestDate(a['Request Date'] || '')
+    const sorted = [...rows].sort((a, b) =>
+      parseRequestDate(b.Request_Date) - parseRequestDate(a.Request_Date)
     );
-    return rows.slice(0, 10).map(r => ({
-      Brand_Name:        r['Counter Party Legal Name'] || '—',
-      Document_type:     (r['Document Type'] || '').trim(),
-      Description_Docs:  (r['Description (Docs)'] || '').trim(),
-      Business_Segment:  (r['Business Segment'] || '').trim(),
-      Current_Status:    normalizeStatus(r['Status'] || ''),
-      Request_Date:      (r['Request Date'] || '').trim(),
-      Reviewer:          (r['Reviewer'] || '').trim(),
+    return sorted.slice(0, 10).map(r => ({
+      Brand_Name:        (r.Brand_Name || '—').trim() || '—',
+      Document_type:     (r.Document_type || '').trim(),
+      Description_Docs:  (r.Description_Docs || '').trim(),
+      Business_Segment:  (r.Business_Segment || '').trim(),
+      Current_Status:    r.Current_Status,
+      Request_Date:      (r.Request_Date || '').trim(),
+      Reviewer:          (r.Reviewer || '').trim(),
     }));
   }),
 
@@ -273,11 +281,7 @@ export const legalRouter = router({
     }).optional())
     .query(async ({ input }) => {
       const i = input || {};
-      const [sheetRows, pgRequests] = await Promise.all([getSheetData(), getRequests()]);
-      let rows: TrackerRow[] = [
-        ...sheetRows.map(mapSheetRow),
-        ...pgRequests.map(mapPgRow),
-      ];
+      let rows: TrackerRow[] = await getMergedTrackerRows();
 
       if (i.status)       rows = rows.filter(r => r.Current_Status === i.status);
       if (i.segment)      rows = rows.filter(r => r.Business_Segment === i.segment);
@@ -303,23 +307,15 @@ export const legalRouter = router({
 
   /** Filter options for Live Tracker dropdowns */
   filterOptions: publicProcedure.query(async () => {
-    const [rows, pgRequests] = await Promise.all([getSheetData(), getRequests()]);
+    const rows = await getMergedTrackerRows();
     const segments  = new Set<string>();
     const docTypes  = new Set<string>();
     const custTypes = new Set<string>();
 
     for (const r of rows) {
-      const seg = (r['Business Segment'] || '').trim();
-      const dt  = (r['Document Type'] || '').trim();
-      const ct  = (r['Counter Party Type'] || '').trim();
-      if (seg) segments.add(seg);
-      if (dt)  docTypes.add(dt);
-      if (ct)  custTypes.add(ct);
-    }
-    for (const d of pgRequests) {
-      const seg = (d.biz_segment || '').trim();
-      const dt  = (d.request_type || '').trim();
-      const ct  = (d.customer_type || '').trim();
+      const seg = (r.Business_Segment || '').trim();
+      const dt  = (r.Document_type || '').trim();
+      const ct  = (r.Customer_Type || '').trim();
       if (seg) segments.add(seg);
       if (dt)  docTypes.add(dt);
       if (ct)  custTypes.add(ct);
@@ -559,15 +555,15 @@ export const legalRouter = router({
   /** Per-reviewer team stats */
   teamStats: publicProcedure.query(async () => {
     const lastUpdated = getSheetLastFetched()?.toISOString() ?? null;
-    const rows = await getSheetData();
+    const rows = await getMergedTrackerRows();
     const memberData: Record<string, {
       total: number; open_count: number; closed_count: number;
-      on_hold_count: number; ageing_sum: number; ageing_cnt: number;
+      on_hold_count: number; pending_count: number; ageing_sum: number; ageing_cnt: number;
       doc_counts: Record<string, number>;
     }> = {};
 
     for (const r of rows) {
-      const reviewer = (r['Reviewer'] || '').trim();
+      const reviewer = (r.Reviewer || '').trim();
       if (!reviewer) continue;
       const parts = reviewer.split('/').map(p => p.trim()).filter(Boolean);
       for (const part of parts) {
@@ -581,17 +577,17 @@ export const legalRouter = router({
 
         if (!memberData[member]) {
           memberData[member] = { total: 0, open_count: 0, closed_count: 0,
-            on_hold_count: 0, ageing_sum: 0, ageing_cnt: 0, doc_counts: {} };
+            on_hold_count: 0, pending_count: 0, ageing_sum: 0, ageing_cnt: 0, doc_counts: {} };
         }
         const md = memberData[member];
         md.total++;
-        const s = normalizeStatus(r['Status'] || '');
-        if (s === 'Open')        md.open_count++;
-        else if (s === 'Closed') md.closed_count++;
-        else if (s === 'On Hold') md.on_hold_count++;
-        const days = parseInt(r['Ageing'] || '', 10);
+        if (r.Current_Status === 'Open')         md.open_count++;
+        else if (r.Current_Status === 'Closed')  md.closed_count++;
+        else if (r.Current_Status === 'On Hold') md.on_hold_count++;
+        else if (r.Current_Status === 'Pending') md.pending_count++;
+        const days = parseInt(r.Ageing || '', 10);
         if (!isNaN(days)) { md.ageing_sum += days; md.ageing_cnt++; }
-        const dt = (r['Document Type'] || '').trim();
+        const dt = (r.Document_type || '').trim();
         if (dt) md.doc_counts[dt] = (md.doc_counts[dt] || 0) + 1;
       }
     }
@@ -608,6 +604,7 @@ export const legalRouter = router({
         open_count:      md.open_count,
         closed_count:    md.closed_count,
         on_hold_count:   md.on_hold_count,
+        pending_count:   md.pending_count,
         avg_ageing_days: md.ageing_cnt > 0 ? Math.round(md.ageing_sum / md.ageing_cnt) : null,
         top_doc_type,
       };
