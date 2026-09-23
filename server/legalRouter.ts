@@ -112,6 +112,17 @@ function cleanSheetValue(v: string): string {
   return SHEET_FORMULA_ERROR.test(trimmed) ? '' : v || '';
 }
 
+// Sheet history sometimes recorded a document type as the terse code the Workflow form's
+// dropdown now spells out in full (e.g. "NDA" vs "NDA Drafting / Review") — group those so
+// filters, charts, and team stats don't split one document type into two buckets.
+const DOCTYPE_CANONICAL: Record<string, string> = {
+  'NDA': 'NDA Drafting / Review',
+};
+function canonicalDocType(v: string): string {
+  const trimmed = (v || '').trim();
+  return DOCTYPE_CANONICAL[trimmed] || trimmed;
+}
+
 function mapSheetRow(r: Record<string, string>): TrackerRow {
   return {
     Request_Date:     r['Request Date'] || '',
@@ -239,7 +250,7 @@ export const legalRouter = router({
     const rows = await getMergedTrackerRows();
     const counts: Record<string, number> = {};
     for (const r of rows) {
-      const dt = (r.Document_type || '').trim();
+      const dt = canonicalDocType(r.Document_type);
       if (dt) counts[dt] = (counts[dt] || 0) + 1;
     }
     return Object.entries(counts)
@@ -303,7 +314,7 @@ export const legalRouter = router({
 
       if (i.status)       rows = rows.filter(r => r.Current_Status === i.status);
       if (i.segment)      rows = rows.filter(r => r.Business_Segment === i.segment);
-      if (i.docType)      rows = rows.filter(r => r.Document_type === i.docType);
+      if (i.docType)      rows = rows.filter(r => canonicalDocType(r.Document_type) === i.docType);
       if (i.customerType) rows = rows.filter(r => r.Customer_Type === i.customerType);
       if (i.search) {
         const q = i.search.toLowerCase();
@@ -332,7 +343,7 @@ export const legalRouter = router({
 
     for (const r of rows) {
       const seg = (r.Business_Segment || '').trim();
-      const dt  = (r.Document_type || '').trim();
+      const dt  = canonicalDocType(r.Document_type);
       const ct  = (r.Customer_Type || '').trim();
       if (seg) segments.add(seg);
       if (dt)  docTypes.add(dt);
@@ -605,7 +616,7 @@ export const legalRouter = router({
         else if (r.Current_Status === 'Pending') md.pending_count++;
         const days = parseInt(r.Ageing || '', 10);
         if (!isNaN(days)) { md.ageing_sum += days; md.ageing_cnt++; }
-        const dt = (r.Document_type || '').trim();
+        const dt = canonicalDocType(r.Document_type);
         if (dt) md.doc_counts[dt] = (md.doc_counts[dt] || 0) + 1;
       }
     }
