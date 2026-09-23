@@ -91,3 +91,15 @@ export const lcDownloads = pgTable("lc_downloads", {
 });
 export type LcDownload = typeof lcDownloads.$inferSelect;
 export type InsertLcDownload = typeof lcDownloads.$inferInsert;
+
+// ── Nexus One signed documents (keyed by brand name from the Nexus One sheet) ──
+export const lcNexusOneDocs = pgTable("lc_nexus_one_docs", {
+  id:              serial("id").primaryKey(),
+  brand_name:      varchar("brand_name", { length: 255 }).notNull().unique(),
+  signed_doc_key:  text("signed_doc_key"),
+  signed_doc_name: varchar("signed_doc_name", { length: 255 }),
+  uploaded_by:     varchar("uploaded_by", { length: 320 }).notNull().default(""),
+  uploaded_at:     varchar("uploaded_at", { length: 64  }).notNull().default(""),
+});
+export type LcNexusOneDoc = typeof lcNexusOneDocs.$inferSelect;
+export type InsertLcNexusOneDoc = typeof lcNexusOneDocs.$inferInsert;

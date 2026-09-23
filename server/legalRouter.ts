@@ -9,6 +9,7 @@ import { publicProcedure, router } from './_core/trpc';
 import { getSheetData, normalizeStatus, getSheetLastFetched } from './legalSheets';
 import { getDisputeChartData, getTMSheetRows, getClaimsByFyndRows, getClaimsAgainstFyndRows } from './disputeSheets';
 import { getNexusOneRows } from './nexusOneSheet';
+import { getNexusOneDocsByBrand, upsertNexusOneDoc } from './nexusOneDocs';
 import { getRequests, insertRequest, patchRequest, deleteRequest, updateFullRequest, setSignedDoc, type LegalRequest } from './legalBigQuery';
 import { listDownloadDocs, insertDownloadDoc, deleteDownloadDoc, formatFileSize } from './legalDownloads';
 import { getLcUser } from './lcAuthRouter';
@@ -721,8 +722,47 @@ export const legalRouter = router({
     });
   }),
 
-  /** Nexus One brand list: Brand Name + TOTs/Seller Agreement Status */
+  /** Nexus One brand list: Brand Name + TOTs/Seller Agreement Status + any uploaded signed doc */
   nexusOneRows: publicProcedure.query(async () => {
-    return await getNexusOneRows();
+    const [rows, docsByBrand] = await Promise.all([
+      getNexusOneRows(),
+      getNexusOneDocsByBrand(),
+    ]);
+    return rows.map(row => {
+      const doc = docsByBrand[row.brandName];
+      return {
+        ...row,
+        signedDocKey:  doc?.signedDocKey  || '',
+        signedDocName: doc?.signedDocName || '',
+      };
+    });
   }),
+
+  /** Upload the signed document for a Nexus One brand (admin only) */
+  uploadNexusOneDoc: publicProcedure
+    .input(z.object({
+      brandName:    z.string().min(1),
+      fileName:     z.string().min(1),
+      fileBase64:   z.string().min(1),
+      contentType:  z.string().default('application/octet-stream'),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const lcUser = await getLcUser(ctx.req);
+      if (!lcUser || !LC_ADMIN_EMAILS.has(lcUser.email)) {
+        throw new Error('FORBIDDEN: admin access required');
+      }
+      const buffer = Buffer.from(input.fileBase64, 'base64');
+      const { key } = await storagePut(
+        `legal/nexus-one/${input.brandName}/${input.fileName}`,
+        buffer,
+        input.contentType,
+      );
+      await upsertNexusOneDoc({
+        brandName:     input.brandName,
+        signedDocKey:  key,
+        signedDocName: input.fileName,
+        uploadedBy:    lcUser.name || lcUser.email,
+      });
+      return { key, name: input.fileName };
+    }),
 });

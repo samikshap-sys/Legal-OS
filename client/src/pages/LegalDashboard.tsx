@@ -646,8 +646,85 @@ function LitigationPage() {
 }
 
 // ── Nexus One page ──────────────────────────────────────────────────────────
+function NexusOneDocCell({
+  brandName,
+  signedDocKey,
+  signedDocName,
+  isAdmin,
+  onUpdate,
+}: {
+  brandName: string;
+  signedDocKey: string;
+  signedDocName: string;
+  isAdmin: boolean;
+  onUpdate: () => void;
+}) {
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const uploadMutation = trpc.legal.uploadNexusOneDoc.useMutation({
+    onSuccess: () => { setUploading(false); setUploadOpen(false); setUploadError(null); onUpdate(); },
+    onError: (err) => { setUploading(false); setUploadError(err.message || 'Upload failed. Please try again.'); },
+  });
+
+  const handleUploadFile = (file: File) => {
+    setUploading(true);
+    setUploadError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '');
+      const base64 = dataUrl.split(',')[1] || '';
+      uploadMutation.mutate({
+        brandName,
+        fileName: file.name,
+        fileBase64: base64,
+        contentType: file.type || 'application/octet-stream',
+      });
+    };
+    reader.onerror = () => { setUploading(false); setUploadError('Could not read that file.'); };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <td>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+        {signedDocKey && (
+          <a
+            href={`/api/download?key=${encodeURIComponent(signedDocKey)}&name=${encodeURIComponent(signedDocName)}`}
+            style={{ fontSize: '0.72rem', color: 'var(--accent)' }}
+          >
+            <i className="fa-solid fa-file-signature" style={{ marginRight: 4 }}></i>
+            Download
+          </a>
+        )}
+        {isAdmin && (
+          uploadOpen ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <input
+                type="file"
+                style={{ fontSize: '0.72rem', maxWidth: 160 }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadFile(f); }}
+                disabled={uploading}
+              />
+              {uploading && <span style={{ fontSize: '0.72rem', color: 'var(--text3)' }}>Uploading…</span>}
+              {uploadError && <span style={{ fontSize: '0.72rem', color: '#dc2626' }}>{uploadError}</span>}
+            </div>
+          ) : (
+            <button className="btn-toggle-upd" onClick={() => setUploadOpen(true)}>
+              {signedDocKey ? 'Replace' : 'Upload'}
+            </button>
+          )
+        )}
+      </div>
+    </td>
+  );
+}
+
 function NexusOnePage() {
-  const { data: rows, error } = trpc.legal.nexusOneRows.useQuery();
+  const { lcUser } = useLcUser();
+  const isAdmin = !!(lcUser && LC_ADMIN_EMAILS.has(lcUser.email));
+  const { data: rows, error, refetch } = trpc.legal.nexusOneRows.useQuery();
 
   return (
     <div className="lc-pg-content">
@@ -677,6 +754,7 @@ function NexusOnePage() {
                   <th>Brand Name</th>
                   <th>TOTs Status</th>
                   <th>Seller Agreement Status</th>
+                  <th>Signed Document</th>
                 </tr>
               </thead>
               <tbody>
@@ -685,6 +763,13 @@ function NexusOnePage() {
                     <td style={{ fontWeight: 600 }}>{row.brandName || '—'}</td>
                     <td>{row.totsStatus ? <span className="lc-chip">{row.totsStatus}</span> : '—'}</td>
                     <td>{row.sellerAgreementStatus ? <span className="lc-chip">{row.sellerAgreementStatus}</span> : '—'}</td>
+                    <NexusOneDocCell
+                      brandName={row.brandName}
+                      signedDocKey={row.signedDocKey}
+                      signedDocName={row.signedDocName}
+                      isAdmin={isAdmin}
+                      onUpdate={() => refetch()}
+                    />
                   </tr>
                 ))}
               </tbody>

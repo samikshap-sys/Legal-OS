@@ -51,6 +51,17 @@ async function ensureLegalSchema(db: ReturnType<typeof drizzle>) {
       )
     `);
 
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS lc_nexus_one_docs (
+        id SERIAL PRIMARY KEY,
+        brand_name VARCHAR(255) NOT NULL UNIQUE,
+        signed_doc_key TEXT,
+        signed_doc_name VARCHAR(255),
+        uploaded_by VARCHAR(320) NOT NULL DEFAULT '',
+        uploaded_at VARCHAR(64) NOT NULL DEFAULT ''
+      )
+    `);
+
     // One-time seed of the India KYC docs that already work today (real
     // /manus-storage/ keys) so the admin-managed repository doesn't start
     // empty. The India Agreement entries are dropped intentionally — their
