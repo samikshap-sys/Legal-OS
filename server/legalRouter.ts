@@ -104,6 +104,14 @@ interface TrackerRow {
   Description_Docs: string;
 }
 
+// Broken spreadsheet formulas (#REF!, #N/A, etc.) sometimes leak raw into a cell's text value.
+// Strip those out at the source rather than showing them to users.
+const SHEET_FORMULA_ERROR = /^#(REF|N\/A|VALUE|DIV\/0|NAME\?|NULL|NUM)!?$/i;
+function cleanSheetValue(v: string): string {
+  const trimmed = (v || '').trim();
+  return SHEET_FORMULA_ERROR.test(trimmed) ? '' : v || '';
+}
+
 function mapSheetRow(r: Record<string, string>): TrackerRow {
   return {
     Request_Date:     r['Request Date'] || '',
@@ -114,7 +122,7 @@ function mapSheetRow(r: Record<string, string>): TrackerRow {
     Current_Status:   normalizeStatus(r['Status'] || ''),
     End_Date:         r['Last Updated'] || '',
     Deal_Value:       r['Deal Value'] || '',
-    Ageing:           r['Ageing'] || '',
+    Ageing:           cleanSheetValue(r['Ageing']),
     Reviewer:         r['Reviewer'] || '',
     Signed_Doc_Link:  r['Signed Doc Link'] || '',
     Drive_Doc_URL:    r['Link'] || '',
@@ -148,6 +156,16 @@ function computeAgeing(submittedAt: string, updatedAt: string, currentStatus: st
   return String(days);
 }
 
+// Workflow's deal_value is always a plain INR decimal string (numeric column on lc_requests),
+// unlike the Sheet's freeform Deal Value column which mixes currencies/units/text — so only
+// this side is safe to reformat consistently.
+function formatInrValue(value: string): string {
+  if (!value) return '';
+  const n = parseFloat(value);
+  if (isNaN(n)) return value;
+  return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
 function mapPgRow(d: LegalRequest): TrackerRow {
   const signedDocUrl = d.signed_doc_key
     ? `/api/download?key=${encodeURIComponent(d.signed_doc_key)}&name=${encodeURIComponent(d.signed_doc_name || d.signed_doc_key)}`
@@ -160,7 +178,7 @@ function mapPgRow(d: LegalRequest): TrackerRow {
     Document_type:    d.request_type,
     Current_Status:   collapseWorkflowStatus(d.current_status),
     End_Date:         d.updated_at,
-    Deal_Value:       d.deal_value,
+    Deal_Value:       formatInrValue(d.deal_value),
     Ageing:           computeAgeing(d.submitted_at, d.updated_at, d.current_status),
     Reviewer:         d.status_updated_by || d.requested_by,
     Signed_Doc_Link:  d.signed_doc_name,
