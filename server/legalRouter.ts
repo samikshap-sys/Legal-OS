@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { publicProcedure, router } from './_core/trpc';
 import { getSheetData, normalizeStatus, getSheetLastFetched } from './legalSheets';
 import { getDisputeChartData, getTMSheetRows, getClaimsByFyndRows, getClaimsAgainstFyndRows } from './disputeSheets';
+import { getNexusOneRows } from './nexusOneSheet';
 import { getRequests, insertRequest, patchRequest, deleteRequest, updateFullRequest, setSignedDoc, type LegalRequest } from './legalBigQuery';
 import { listDownloadDocs, insertDownloadDoc, deleteDownloadDoc, formatFileSize } from './legalDownloads';
 import { getLcUser } from './lcAuthRouter';
@@ -718,5 +719,10 @@ export const legalRouter = router({
       }
       return out;
     });
+  }),
+
+  /** Nexus One brand list: Brand Name + TOTs/Seller Agreement Status */
+  nexusOneRows: publicProcedure.query(async () => {
+    return await getNexusOneRows();
   }),
 });

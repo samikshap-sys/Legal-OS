@@ -647,6 +647,8 @@ function LitigationPage() {
 
 // ── Nexus One page ──────────────────────────────────────────────────────────
 function NexusOnePage() {
+  const { data: rows, error } = trpc.legal.nexusOneRows.useQuery();
+
   return (
     <div className="lc-pg-content">
       {/* Page header */}
@@ -654,13 +656,41 @@ function NexusOnePage() {
         <h1 className="lc-ph-h">Nexus One</h1>
       </div>
 
-      <div className="lc-card" style={{ marginBottom: "1.5rem" }}>
+      <div className="lc-card" style={{ marginBottom: "1.5rem", overflowX: "auto" }}>
         <div className="lc-card-hd">
-          <span className="lc-card-title">Nexus One</span>
+          <span className="lc-card-title">Brands & Agreement Status</span>
+          {rows && <span className="lc-chip">{rows.length} BRANDS</span>}
         </div>
-        <div style={{ color: '#9aa0ab', fontSize: '0.85rem', padding: '2rem 0', textAlign: 'center' }}>
-          No data yet — this tab is ready for Nexus One's records.
-        </div>
+        {error ? (
+          <div style={{ color: '#b91c1c', fontSize: '0.85rem', padding: '1rem 0' }}>
+            Couldn't load this sheet — {error.message}
+          </div>
+        ) : !rows ? (
+          <div className="lc-loading">Loading…</div>
+        ) : rows.length === 0 ? (
+          <div style={{ color: '#9aa0ab', fontSize: '0.85rem', padding: '1rem 0' }}>No brands on record.</div>
+        ) : (
+          <div style={{ overflowX: "auto", marginTop: "0.75rem" }}>
+            <table className="tm-sheet-table">
+              <thead>
+                <tr>
+                  <th>Brand Name</th>
+                  <th>TOTs Status</th>
+                  <th>Seller Agreement Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight: 600 }}>{row.brandName || '—'}</td>
+                    <td>{row.totsStatus ? <span className="lc-chip">{row.totsStatus}</span> : '—'}</td>
+                    <td>{row.sellerAgreementStatus ? <span className="lc-chip">{row.sellerAgreementStatus}</span> : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2179,7 +2209,7 @@ export default function LegalDashboard() {
             onClick={() => setActivePage("nexus-one")}
             title="Nexus One"
           >
-            <img src="/nexus-one-logo.png" alt="Nexus One" className="lc-sbi-brand-logo" />
+            <img src="/nexus-one-icon.png" alt="Nexus One" className="lc-sbi-brand-logo" />
             <span>Nexus One</span>
           </button>
           {/* Team — last (informational, not operational) */}
