@@ -1867,21 +1867,30 @@ function WfCard({ wf, onUpdate }: { wf: WfRequest; onUpdate: () => void }) {
         {isActive && isAdmin && (
           <button className="btn-toggle-upd" onClick={() => setPanelOpen(o => !o)}>Update Status</button>
         )}
-        {isAdmin && (
-          <button className="btn-toggle-upd" onClick={() => setUploadOpen(o => !o)}>
-            {wf.signed_doc_key ? 'Replace Signed Doc' : 'Upload Signed Doc'}
-          </button>
-        )}
         {wf.status_note && <div className="wf-note-txt">{wf.status_note}</div>}
-        {wf.doc_link && <a href={wf.doc_link} target="_blank" rel="noreferrer" style={{ fontSize: '0.67rem', color: 'var(--accent)' }}>Attached Doc</a>}
-        {wf.signed_doc_key && (
-          <a
-            href={`/api/download?key=${encodeURIComponent(wf.signed_doc_key)}&name=${encodeURIComponent(wf.signed_doc_name)}`}
-            style={{ fontSize: '0.67rem', color: 'var(--accent)' }}
-          >
-            <i className="fa-solid fa-file-signature" style={{ marginRight: 4 }}></i>
-            Download Signed Document
+        {wf.doc_link && (
+          <a href={wf.doc_link} target="_blank" rel="noreferrer" style={{ fontSize: '0.67rem', color: 'var(--accent)' }} title="Reference document the requester attached when submitting this request">
+            Supporting Documents
           </a>
+        )}
+        {(isAdmin || wf.signed_doc_key) && (
+          <div className="wf-signed-group" title="The final, legally executed copy of this document">
+            <span className="wf-signed-lbl">Signed Copy:</span>
+            {isAdmin && (
+              <button className="btn-toggle-upd" onClick={() => setUploadOpen(o => !o)}>
+                {wf.signed_doc_key ? 'Replace' : 'Upload'}
+              </button>
+            )}
+            {wf.signed_doc_key && (
+              <a
+                href={`/api/download?key=${encodeURIComponent(wf.signed_doc_key)}&name=${encodeURIComponent(wf.signed_doc_name)}`}
+                style={{ fontSize: '0.67rem', color: 'var(--accent)' }}
+              >
+                <i className="fa-solid fa-file-signature" style={{ marginRight: 4 }}></i>
+                Download
+              </a>
+            )}
+          </div>
         )}
       </div>
       {isAdmin && uploadOpen && (

@@ -793,6 +793,8 @@ input.fsel:focus { border-color: rgba(9,32,69,0.5); box-shadow: 0 0 0 3px rgba(9
 
 /* Workflow Update Panel */
 .wf-actions { display: flex; align-items: center; gap: 0.65rem; margin-top: 0.85rem; flex-wrap: wrap; }
+.wf-signed-group { display: inline-flex; align-items: center; gap: 0.4rem; padding-left: 0.65rem; border-left: 1px solid var(--border); }
+.wf-signed-lbl { font-size: 0.67rem; color: var(--text3); font-weight: 600; }
 .btn-toggle-upd {
   font-family: var(--font-body);
   background: #092045;
