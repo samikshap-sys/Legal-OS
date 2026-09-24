@@ -15,4 +15,12 @@ export const ENV = {
   bqOAuthClientId: process.env.BQ_OAUTH_CLIENT_ID ?? "",
   bqOAuthClientSecret: process.env.BQ_OAUTH_CLIENT_SECRET ?? "",
   bqOAuthRefreshToken: process.env.BQ_OAUTH_REFRESH_TOKEN ?? "",
+  jiosignBaseUrl: process.env.JIOSIGN_BASE_URL ?? "",
+  jiosignToken: process.env.JIOSIGN_TOKEN ?? "",
+  jiosignIpAddress: process.env.JIOSIGN_IP_ADDRESS ?? "",
+  jiosignMacId: process.env.JIOSIGN_MAC_ID ?? "",
+  jiosignTxn: process.env.JIOSIGN_TXN ?? "",
+  jiosignClientCert: process.env.JIOSIGN_CLIENT_CERT ?? "",
+  jiosignClientKey: process.env.JIOSIGN_CLIENT_KEY ?? "",
+  jiosignCaCert: process.env.JIOSIGN_CA_CERT ?? "",
 };

@@ -782,21 +782,342 @@ function NexusOnePage() {
 }
 
 // ── JioSign page (embedded iframe) ──────────────────────────────────────────
+// ── JioSign: send-for-signature wizard + document repository ────────────────
+const JIOSIGN_STEPS = [
+  { id: 1, label: 'Upload Document' },
+  { id: 2, label: 'Add Participants' },
+  { id: 3, label: 'Manage Signature' },
+  { id: 4, label: 'Review & Send' },
+];
+
+function JioSignStepper({ step }: { step: number }) {
+  return (
+    <div className="wf-timeline">
+      {JIOSIGN_STEPS.map((s, i) => {
+        const cls = i + 1 < step ? 'wf-done' : i + 1 === step ? 'wf-active' : '';
+        return (
+          <div key={s.id} className={`wf-step ${cls}`}>
+            <div className="wf-dot">{cls === 'wf-done' ? '✓' : s.id}</div>
+            <div className="wf-slbl">{s.label}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+interface JioSignParticipantForm { email: string; role: 'signer' | 'viewer'; }
+
+function JioSignWizard({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
+  const [step, setStep] = useState(1);
+  const [file, setFile] = useState<File | null>(null);
+  const [documentName, setDocumentName] = useState('');
+  const [participants, setParticipants] = useState<JioSignParticipantForm[]>([{ email: '', role: 'signer' }]);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+
+  const createMutation = trpc.legal.jiosignCreateEnvelope.useMutation({
+    onSuccess: () => { setSending(false); setSent(true); },
+    onError: (err) => { setSending(false); setSendError(err.message || 'Failed to send document.'); },
+  });
+
+  const handleFileSelect = (f: File) => {
+    setFile(f);
+    if (!documentName) setDocumentName(f.name.replace(/\.pdf$/i, ''));
+  };
+
+  const validParticipants = participants.filter(p => p.email.trim());
+  const canGoNextFrom1 = !!file && documentName.trim().length > 0;
+  const canGoNextFrom2 = validParticipants.length > 0 && validParticipants.some(p => p.role === 'signer');
+
+  const handleSend = () => {
+    if (!file) return;
+    setSending(true);
+    setSendError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '');
+      const base64 = dataUrl.split(',')[1] || '';
+      createMutation.mutate({
+        documentName,
+        fileName: file.name,
+        fileBase64: base64,
+        contentType: file.type || 'application/pdf',
+        message,
+        participants: validParticipants,
+      });
+    };
+    reader.onerror = () => { setSending(false); setSendError('Could not read that file.'); };
+    reader.readAsDataURL(file);
+  };
+
+  if (sent) {
+    return (
+      <div className="lc-card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>✅</div>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Document successfully sent</h2>
+        <p style={{ color: 'var(--text3)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+          {documentName} was sent to {validParticipants.length} participant{validParticipants.length > 1 ? 's' : ''} via JioSign.
+        </p>
+        <button className="btn-submit-req" onClick={onDone}>Go to Document List</button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <JioSignStepper step={step} />
+      <div className="lc-card" style={{ marginTop: '1rem' }}>
+        {step === 1 && (
+          <div className="req-fgrid">
+            <div className="req-fg full">
+              <label>Document Name *</label>
+              <input
+                type="text"
+                value={documentName}
+                onChange={e => setDocumentName(e.target.value)}
+                placeholder="e.g. SOW - Example Organization"
+              />
+            </div>
+            <div className="req-fg full">
+              <label>Signing Document (PDF) *</label>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }}
+              />
+              {file && (
+                <div style={{ fontSize: '0.8rem', color: 'var(--text3)', marginTop: '0.4rem' }}>
+                  {file.name} · {new Date().toLocaleDateString('en-IN')}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div>
+            {participants.map((p, i) => (
+              <div key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '0.75rem' }}>
+                <div className="req-fg" style={{ flex: 2 }}>
+                  <label>{i === 0 ? 'Email / Mobile' : ''}</label>
+                  <input
+                    type="email"
+                    value={p.email}
+                    placeholder="signer@company.com"
+                    onChange={e => {
+                      const next = [...participants]; next[i] = { ...next[i], email: e.target.value }; setParticipants(next);
+                    }}
+                  />
+                </div>
+                <div className="req-fg" style={{ flex: 1 }}>
+                  <label>{i === 0 ? 'Action Required' : ''}</label>
+                  <select
+                    value={p.role}
+                    onChange={e => {
+                      const next = [...participants]; next[i] = { ...next[i], role: e.target.value as 'signer' | 'viewer' }; setParticipants(next);
+                    }}
+                  >
+                    <option value="signer">e-Signature</option>
+                    <option value="viewer">Viewer only</option>
+                  </select>
+                </div>
+                {participants.length > 1 && (
+                  <button
+                    className="btn-ghost-req"
+                    style={{ height: '2.6rem' }}
+                    onClick={() => setParticipants(participants.filter((_, j) => j !== i))}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            <button className="btn-ghost-req" onClick={() => setParticipants([...participants, { email: '', role: 'signer' }])}>
+              + Add participant
+            </button>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text2)', marginBottom: '1rem' }}>
+              JioSign auto-places signature fields for each signer on the document — no manual card positioning needed.
+            </p>
+            <table className="tm-sheet-table">
+              <thead><tr><th>Participant</th><th>Role</th><th>Fields placed</th></tr></thead>
+              <tbody>
+                {validParticipants.map((p, i) => (
+                  <tr key={i}>
+                    <td>{p.email}</td>
+                    <td>{p.role === 'signer' ? 'Signer' : 'Viewer'}</td>
+                    <td>{p.role === 'signer' ? 'Signature, Signing Date' : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+            <div className="req-fg" style={{ flex: 1, minWidth: 280 }}>
+              <label>Add Custom Message</label>
+              <textarea
+                value={message}
+                onChange={e => setMessage(e.target.value.slice(0, 500))}
+                placeholder="Message shown to participants"
+                rows={8}
+              />
+              <div style={{ fontSize: '0.7rem', color: 'var(--text3)', textAlign: 'right' }}>{message.length}/500</div>
+            </div>
+            <div style={{ flex: 1, minWidth: 240, fontSize: '0.85rem' }}>
+              <div style={{ fontWeight: 700, marginBottom: '0.5rem' }}>Summary</div>
+              <div style={{ marginBottom: '0.75rem' }}><b>Document:</b> {documentName}</div>
+              <div>
+                <b>Participants:</b>
+                {validParticipants.map((p, i) => (
+                  <div key={i}>{p.email} — {p.role === 'signer' ? 'e-Signature' : 'Viewer'}</div>
+                ))}
+              </div>
+              {sendError && <div style={{ color: '#dc2626', marginTop: '0.75rem' }}>{sendError}</div>}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #E5E7EB' }}>
+          <button className="btn-ghost-req" onClick={() => step === 1 ? onCancel() : setStep(step - 1)}>
+            {step === 1 ? 'Cancel' : 'Back'}
+          </button>
+          {step < 4 ? (
+            <button
+              className="btn-submit-req"
+              disabled={(step === 1 && !canGoNextFrom1) || (step === 2 && !canGoNextFrom2)}
+              onClick={() => setStep(step + 1)}
+            >
+              Next
+            </button>
+          ) : (
+            <button className="btn-submit-req" disabled={sending} onClick={handleSend}>
+              {sending ? 'Sending…' : 'Send'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface JioSignEnvelope {
+  id: number;
+  documentName: string;
+  status: string;
+  signedDocKey: string;
+  signedDocName: string;
+  createdAt: string;
+  errorMessage: string;
+}
+
+function JioSignEnvelopeRow({ envelope, onUpdate, isAdmin }: { envelope: JioSignEnvelope; onUpdate: () => void; isAdmin: boolean }) {
+  const refreshMutation = trpc.legal.jiosignRefreshStatus.useMutation({ onSuccess: onUpdate });
+  const fetchMutation = trpc.legal.jiosignFetchSignedFile.useMutation({ onSuccess: onUpdate });
+
+  return (
+    <tr>
+      <td style={{ fontWeight: 600 }}>{envelope.documentName || '—'}</td>
+      <td>{envelope.createdAt ? new Date(envelope.createdAt).toLocaleDateString('en-IN') : '—'}</td>
+      <td>
+        <span className="lc-chip">{envelope.status}</span>
+        {envelope.status === 'failed' && envelope.errorMessage && (
+          <div style={{ fontSize: '0.7rem', color: '#dc2626', marginTop: '0.25rem' }}>{envelope.errorMessage}</div>
+        )}
+      </td>
+      <td>
+        {envelope.signedDocKey ? (
+          <a
+            href={`/api/download?key=${encodeURIComponent(envelope.signedDocKey)}&name=${encodeURIComponent(envelope.signedDocName)}`}
+            style={{ fontSize: '0.72rem', color: 'var(--accent)' }}
+          >
+            <i className="fa-solid fa-file-signature" style={{ marginRight: 4 }}></i>
+            Download
+          </a>
+        ) : isAdmin && envelope.status !== 'draft' && envelope.status !== 'failed' ? (
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              className="btn-toggle-upd"
+              disabled={refreshMutation.isPending}
+              onClick={() => refreshMutation.mutate({ id: envelope.id })}
+            >
+              {refreshMutation.isPending ? 'Checking…' : 'Refresh Status'}
+            </button>
+            <button
+              className="btn-toggle-upd"
+              disabled={fetchMutation.isPending}
+              onClick={() => fetchMutation.mutate({ id: envelope.id })}
+            >
+              {fetchMutation.isPending ? 'Fetching…' : 'Fetch Signed Copy'}
+            </button>
+          </div>
+        ) : '—'}
+      </td>
+    </tr>
+  );
+}
+
 function JioSignPage() {
+  const { lcUser } = useLcUser();
+  const isAdmin = !!(lcUser && LC_ADMIN_EMAILS.has(lcUser.email));
+  const [showWizard, setShowWizard] = useState(false);
+  const { data: envelopes, error, refetch } = trpc.legal.jiosignListEnvelopes.useQuery();
+
   return (
     <div className="lc-pg-content">
-      {/* Page header */}
       <div className="lc-ph-row">
         <h1 className="lc-ph-h">JioSign</h1>
+        {isAdmin && !showWizard && (
+          <button className="btn-submit-req" onClick={() => setShowWizard(true)}>Upload Document</button>
+        )}
       </div>
 
-      <div className="lc-card lc-jiosign-card">
-        <iframe
-          src="https://jiosign.com/login"
-          title="JioSign"
-          className="lc-jiosign-iframe"
+      {showWizard ? (
+        <JioSignWizard
+          onDone={() => { setShowWizard(false); refetch(); }}
+          onCancel={() => setShowWizard(false)}
         />
-      </div>
+      ) : (
+        <div className="lc-card" style={{ overflowX: 'auto' }}>
+          <div className="lc-card-hd">
+            <span className="lc-card-title">Documents</span>
+            {envelopes && <span className="lc-chip">{envelopes.length} DOCUMENTS</span>}
+          </div>
+          {error ? (
+            <div style={{ color: '#b91c1c', fontSize: '0.85rem', padding: '1rem 0' }}>
+              Couldn't load documents — {error.message}
+            </div>
+          ) : !envelopes ? (
+            <div className="lc-loading">Loading…</div>
+          ) : envelopes.length === 0 ? (
+            <div style={{ color: '#9aa0ab', fontSize: '0.85rem', padding: '2rem 0', textAlign: 'center' }}>
+              No documents sent yet.{isAdmin ? ' Click "Upload Document" to send one for signature.' : ''}
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto', marginTop: '0.75rem' }}>
+              <table className="tm-sheet-table">
+                <thead>
+                  <tr><th>Subject</th><th>Created</th><th>Status</th><th>Signed Copy</th></tr>
+                </thead>
+                <tbody>
+                  {envelopes.map(e => (
+                    <JioSignEnvelopeRow key={e.id} envelope={e} onUpdate={refetch} isAdmin={isAdmin} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

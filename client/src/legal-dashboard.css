@@ -85,8 +85,6 @@
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
 .lc-charts-row{display:grid;grid-template-columns:1fr 1.5fr;gap:1rem;margin-bottom:1.25rem}
 .lc-card{background:#fff;border-radius:12px;padding:1.25rem;border:1px solid #E5E7EB;box-shadow:0 1px 4px rgba(0,0,0,0.05)}
-.lc-jiosign-card{padding:0;overflow:hidden;height:calc(100vh - 168px)}
-.lc-jiosign-iframe{width:100%;height:100%;border:0;display:block}
 .lc-card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem}
 .lc-card-title{font-size:.9rem;font-weight:700;color:#1C1C1E}
 .lc-card-sub{font-size:.75rem;color:#9AA0AB;margin-bottom:1rem}

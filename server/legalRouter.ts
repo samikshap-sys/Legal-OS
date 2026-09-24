@@ -14,6 +14,10 @@ import { getRequests, insertRequest, patchRequest, deleteRequest, updateFullRequ
 import { listDownloadDocs, insertDownloadDoc, deleteDownloadDoc, formatFileSize } from './legalDownloads';
 import { getLcUser } from './lcAuthRouter';
 import { storagePut } from './storage';
+import * as jiosign from './jiosignClient';
+import {
+  listJioSignEnvelopes, getJioSignEnvelope, insertDraftEnvelope, updateEnvelope,
+} from './jiosignEnvelopes';
 
 // ─── Slack notification helper ───────────────────────────────────────────────
 const LC_SLACK_CHANNEL = 'C0B40G1E02C'; // #legal-connect-requests
@@ -764,5 +768,102 @@ export const legalRouter = router({
         uploadedBy:    lcUser.name || lcUser.email,
       });
       return { key, name: input.fileName };
+    }),
+
+  // ── JioSign ──────────────────────────────────────────────────────────────
+
+  /** Document list for the JioSign repository tab */
+  jiosignListEnvelopes: publicProcedure.query(async () => {
+    return await listJioSignEnvelopes();
+  }),
+
+  /** Send a document for signature: create → upload → initiate per signer (admin only) */
+  jiosignCreateEnvelope: publicProcedure
+    .input(z.object({
+      documentName: z.string().min(1),
+      fileName:     z.string().min(1),
+      fileBase64:   z.string().min(1),
+      contentType:  z.string().default('application/pdf'),
+      message:      z.string().default(''),
+      participants: z.array(z.object({
+        email: z.string().email(),
+        role:  z.enum(['signer', 'viewer']),
+      })).min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const lcUser = await getLcUser(ctx.req);
+      if (!lcUser || !LC_ADMIN_EMAILS.has(lcUser.email)) {
+        throw new Error('FORBIDDEN: admin access required');
+      }
+      const id = await insertDraftEnvelope({
+        documentName:      input.documentName,
+        message:           input.message,
+        participantsJson:  JSON.stringify(input.participants),
+        createdBy:         lcUser.name || lcUser.email,
+      });
+
+      try {
+        const groupId = await jiosign.createDocument(input.documentName);
+        await updateEnvelope(id, { groupId, status: 'creating' });
+
+        const buffer = Buffer.from(input.fileBase64, 'base64');
+        await jiosign.uploadDocumentData({
+          groupId,
+          fileBuffer: buffer,
+          fileName: input.fileName,
+          message: input.message,
+          participants: input.participants,
+        });
+
+        let firstActionToken = '';
+        for (const p of input.participants) {
+          if (p.role !== 'signer') continue;
+          const { actionToken } = await jiosign.initiateSign(groupId, p.email, input.message);
+          if (!firstActionToken) firstActionToken = actionToken;
+        }
+
+        await updateEnvelope(id, { status: 'sent', actionToken: firstActionToken });
+        return { id, groupId };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to send document via JioSign';
+        await updateEnvelope(id, { status: 'failed', errorMessage: message });
+        throw new Error(message);
+      }
+    }),
+
+  /** Poll JioSign for completion on one envelope (admin only) */
+  jiosignRefreshStatus: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const lcUser = await getLcUser(ctx.req);
+      if (!lcUser || !LC_ADMIN_EMAILS.has(lcUser.email)) {
+        throw new Error('FORBIDDEN: admin access required');
+      }
+      const envelope = await getJioSignEnvelope(input.id);
+      if (!envelope) throw new Error('Envelope not found');
+      if (!envelope.actionToken) return envelope;
+
+      const status = await jiosign.getSignStatus(envelope.actionToken);
+      const newStatus = jiosign.isSignComplete(status) ? 'completed' : 'waiting';
+      await updateEnvelope(input.id, { status: newStatus });
+      return await getJioSignEnvelope(input.id);
+    }),
+
+  /** Fetch the signed PDF from JioSign and save it into the repository (admin only) */
+  jiosignFetchSignedFile: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const lcUser = await getLcUser(ctx.req);
+      if (!lcUser || !LC_ADMIN_EMAILS.has(lcUser.email)) {
+        throw new Error('FORBIDDEN: admin access required');
+      }
+      const envelope = await getJioSignEnvelope(input.id);
+      if (!envelope || !envelope.groupId) throw new Error('Envelope not found or not yet sent');
+
+      const fileBuffer = await jiosign.downloadSignedFile(envelope.groupId);
+      const fileName = `${envelope.documentName || 'signed-document'}.pdf`;
+      const { key } = await storagePut(`legal/jiosign/${envelope.id}/${fileName}`, fileBuffer, 'application/pdf');
+      await updateEnvelope(input.id, { signedDocKey: key, signedDocName: fileName, status: 'completed' });
+      return { key, name: fileName };
     }),
 });

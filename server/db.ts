@@ -62,6 +62,24 @@ async function ensureLegalSchema(db: ReturnType<typeof drizzle>) {
       )
     `);
 
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS lc_jiosign_envelopes (
+        id SERIAL PRIMARY KEY,
+        group_id VARCHAR(128),
+        document_name VARCHAR(255) NOT NULL DEFAULT '',
+        message TEXT,
+        participants_json TEXT NOT NULL DEFAULT '[]',
+        action_token TEXT,
+        status VARCHAR(32) NOT NULL DEFAULT 'draft',
+        error_message TEXT,
+        signed_doc_key TEXT,
+        signed_doc_name VARCHAR(255),
+        created_by VARCHAR(320) NOT NULL DEFAULT '',
+        created_at VARCHAR(64) NOT NULL DEFAULT '',
+        updated_at VARCHAR(64) NOT NULL DEFAULT ''
+      )
+    `);
+
     // One-time seed of the India KYC docs that already work today (real
     // /manus-storage/ keys) so the admin-managed repository doesn't start
     // empty. The India Agreement entries are dropped intentionally — their

@@ -103,3 +103,22 @@ export const lcNexusOneDocs = pgTable("lc_nexus_one_docs", {
 });
 export type LcNexusOneDoc = typeof lcNexusOneDocs.$inferSelect;
 export type InsertLcNexusOneDoc = typeof lcNexusOneDocs.$inferInsert;
+
+// ── JioSign signing envelopes ─────────────────────────────────────────────────
+export const lcJiosignEnvelopes = pgTable("lc_jiosign_envelopes", {
+  id:                serial("id").primaryKey(),
+  group_id:          varchar("group_id", { length: 128 }),
+  document_name:     varchar("document_name", { length: 255 }).notNull().default(""),
+  message:           text("message"),
+  participants_json: text("participants_json").notNull().default("[]"),
+  action_token:      text("action_token"),
+  status:            varchar("status", { length: 32 }).notNull().default("draft"),
+  error_message:     text("error_message"),
+  signed_doc_key:    text("signed_doc_key"),
+  signed_doc_name:   varchar("signed_doc_name", { length: 255 }),
+  created_by:        varchar("created_by", { length: 320 }).notNull().default(""),
+  created_at:        varchar("created_at", { length: 64 }).notNull().default(""),
+  updated_at:        varchar("updated_at", { length: 64 }).notNull().default(""),
+});
+export type LcJiosignEnvelope = typeof lcJiosignEnvelopes.$inferSelect;
+export type InsertLcJiosignEnvelope = typeof lcJiosignEnvelopes.$inferInsert;
