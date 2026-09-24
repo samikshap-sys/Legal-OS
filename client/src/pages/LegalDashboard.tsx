@@ -39,7 +39,7 @@ ChartJS.register(
 );
 
 // ── Sidebar nav items ──────────────────────────────────────────────────────
-type Page = "dashboard" | "tracker" | "requests" | "workflows" | "team" | "templates" | "fynds-ipr" | "litigation" | "nexus-one" | "user-management";
+type Page = "dashboard" | "tracker" | "requests" | "workflows" | "team" | "templates" | "fynds-ipr" | "litigation" | "nexus-one" | "jiosign" | "user-management";
 
 // Admin emails — only these users can update status and delete workflow cards
 const LC_ADMIN_EMAILS = new Set([
@@ -776,6 +776,26 @@ function NexusOnePage() {
             </table>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── JioSign page (embedded iframe) ──────────────────────────────────────────
+function JioSignPage() {
+  return (
+    <div className="lc-pg-content">
+      {/* Page header */}
+      <div className="lc-ph-row">
+        <h1 className="lc-ph-h">JioSign</h1>
+      </div>
+
+      <div className="lc-card lc-jiosign-card">
+        <iframe
+          src="https://jiosign.com/login"
+          title="JioSign"
+          className="lc-jiosign-iframe"
+        />
       </div>
     </div>
   );
@@ -2215,6 +2235,7 @@ export default function LegalDashboard() {
     "fynds-ipr":     <IPRPage />,
     litigation:      <LitigationPage />,
     "nexus-one":     <NexusOnePage />,
+    jiosign:         <JioSignPage />,
     "user-management": <LegalUserManagement />,
   };
 
@@ -2296,6 +2317,15 @@ export default function LegalDashboard() {
           >
             <img src="/nexus-one-icon.png" alt="Nexus One" className="lc-sbi-brand-logo" />
             <span>Nexus One</span>
+          </button>
+          {/* JioSign */}
+          <button
+            className={`lc-sbi${activePage === "jiosign" ? " active" : ""}`}
+            onClick={() => setActivePage("jiosign")}
+            title="JioSign"
+          >
+            <i className="fa-solid fa-signature"></i>
+            <span>JioSign</span>
           </button>
           {/* Team — last (informational, not operational) */}
           {hasScope("team") && (
