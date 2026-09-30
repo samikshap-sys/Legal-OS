@@ -19,8 +19,4 @@ export const ENV = {
   jiosignToken: process.env.JIOSIGN_TOKEN ?? "",
   jiosignIpAddress: process.env.JIOSIGN_IP_ADDRESS ?? "",
   jiosignMacId: process.env.JIOSIGN_MAC_ID ?? "",
-  jiosignTxn: process.env.JIOSIGN_TXN ?? "",
-  jiosignClientCert: process.env.JIOSIGN_CLIENT_CERT ?? "",
-  jiosignClientKey: process.env.JIOSIGN_CLIENT_KEY ?? "",
-  jiosignCaCert: process.env.JIOSIGN_CA_CERT ?? "",
 };
