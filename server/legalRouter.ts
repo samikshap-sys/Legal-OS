@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import { isAxiosError } from 'axios';
 import { publicProcedure, router } from './_core/trpc';
 import { getSheetData, normalizeStatus, getSheetLastFetched } from './legalSheets';
 import { getDisputeChartData, getTMSheetRows, getClaimsByFyndRows, getClaimsAgainstFyndRows } from './disputeSheets';
@@ -18,6 +19,18 @@ import * as jiosign from './jiosignClient';
 import {
   listJioSignEnvelopes, getJioSignEnvelope, insertDraftEnvelope, updateEnvelope,
 } from './jiosignEnvelopes';
+
+// JioSign's error body is usually far more specific than axios's generic
+// "Request failed with status code NNN" (e.g. which header/credential was rejected).
+function describeJioSignError(err: unknown): string {
+  if (isAxiosError(err)) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+    const detail = typeof data === 'string' ? data : data ? JSON.stringify(data) : err.message;
+    return status ? `JioSign request failed (${status}): ${detail}` : err.message;
+  }
+  return err instanceof Error ? err.message : 'Failed to send document via JioSign';
+}
 
 // ─── Slack notification helper ───────────────────────────────────────────────
 const LC_SLACK_CHANNEL = 'C0B40G1E02C'; // #legal-connect-requests
@@ -825,7 +838,7 @@ export const legalRouter = router({
         await updateEnvelope(id, { status: 'sent', actionToken: firstActionToken });
         return { id, groupId };
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to send document via JioSign';
+        const message = describeJioSignError(err);
         await updateEnvelope(id, { status: 'failed', errorMessage: message });
         throw new Error(message);
       }
