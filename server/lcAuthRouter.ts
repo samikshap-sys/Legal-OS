@@ -8,7 +8,7 @@
  *   POST /api/lc/auth/logout          — clear LC session cookie
  *
  * Session: JWT signed with QB_SESSION_SECRET (reused), stored in httpOnly cookie "lc_session".
- * Domain enforcement: only @gofynd.com emails are allowed.
+ * Domain enforcement: only emails on ALLOWED_DOMAINS are allowed.
  * Reuses the same Google OAuth client credentials as QueryBee (same app, different cookie).
  */
 import { Router, Request, Response } from "express";
@@ -22,7 +22,12 @@ export const lcAuthRouter = Router();
 
 const LC_COOKIE = "lc_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const ALLOWED_DOMAIN = "gofynd.com";
+// Reliance (ril.com) added alongside Fynd (gofynd.com) per 2026-10-05 request.
+const ALLOWED_DOMAINS = ["gofynd.com", "ril.com"];
+
+function isAllowedEmail(email: string): boolean {
+  return ALLOWED_DOMAINS.some((domain) => email.endsWith(`@${domain}`));
+}
 
 function getSecret(): Uint8Array {
   return new TextEncoder().encode(ENV.qbSessionSecret || "lc-fallback-secret");
@@ -37,7 +42,7 @@ export async function getLcUser(req: Request): Promise<{ email: string; name: st
     const email = payload.email as string;
     const name = (payload.name as string) || "";
     const googleId = (payload.googleId as string) || "";
-    if (!email || !email.endsWith(`@${ALLOWED_DOMAIN}`)) return null;
+    if (!email || !isAllowedEmail(email)) return null;
     return { email, name, googleId };
   } catch {
     return null;
@@ -118,8 +123,8 @@ lcAuthRouter.get("/callback", async (req: Request, res: Response) => {
     const email: string = userInfo.email || "";
     const name: string = userInfo.name || userInfo.given_name || email.split("@")[0];
     const googleId: string = userInfo.sub;
-    // Enforce @gofynd.com domain
-    if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+    // Enforce allowed domains
+    if (!isAllowedEmail(email)) {
       res.redirect(`${origin}/legal-connect?lc_error=domain_not_allowed&email=${encodeURIComponent(email)}`);
       return;
     }
