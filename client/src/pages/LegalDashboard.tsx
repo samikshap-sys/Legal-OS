@@ -248,12 +248,12 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
     URL.revokeObjectURL(url);
   };
 
-  // Donut chart — navy/cream palette: Closed=darkest navy, On Hold=slate navy, Pending=cream accent, Open=navy
+  // Donut chart — bright primary palette, one distinct hue per status for quick scanning
   const STATUS_DONUT_COLOR: Record<string, string> = {
-    Open:    "#092045",  // primary navy
-    Closed:  "#030B18",  // near-black navy (anchors dominant slice)
-    "On Hold": "#3B5A85", // slate navy
-    Pending: "#F6E5BC",  // cream accent
+    Open:    "#2563EB",  // vivid blue
+    Closed:  "#16A34A",  // vivid green
+    "On Hold": "#F59E0B", // vivid amber
+    Pending: "#9333EA",  // vivid purple
   };
   const donutData = statusData ? {
     labels: statusData.map(r => r.status),
@@ -300,10 +300,10 @@ function DashboardPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
   const regionBarData = regions.length ? {
     labels: regions,
     datasets: [
-      { label: "Open",    data: regions.map(r => pickCnt(r, "Open")),    backgroundColor: "#092045", borderRadius: 4, barThickness: 22 },
-      { label: "Closed",  data: regions.map(r => pickCnt(r, "Closed")),  backgroundColor: "#030B18", borderRadius: 4, barThickness: 22 },
-      { label: "On Hold", data: regions.map(r => pickCnt(r, "On Hold")), backgroundColor: "#3B5A85", borderRadius: 4, barThickness: 22 },
-      { label: "Pending", data: regions.map(r => pickCnt(r, "Pending")), backgroundColor: "#F6E5BC", borderRadius: 4, barThickness: 22 },
+      { label: "Open",    data: regions.map(r => pickCnt(r, "Open")),    backgroundColor: "#2563EB", borderRadius: 4, barThickness: 22 },
+      { label: "Closed",  data: regions.map(r => pickCnt(r, "Closed")),  backgroundColor: "#16A34A", borderRadius: 4, barThickness: 22 },
+      { label: "On Hold", data: regions.map(r => pickCnt(r, "On Hold")), backgroundColor: "#F59E0B", borderRadius: 4, barThickness: 22 },
+      { label: "Pending", data: regions.map(r => pickCnt(r, "Pending")), backgroundColor: "#9333EA", borderRadius: 4, barThickness: 22 },
     ],
   } : null;
 
