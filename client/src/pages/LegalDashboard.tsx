@@ -1360,7 +1360,7 @@ function TrackerPage() {
 
 // ── Team page ──────────────────────────────────────────────────────────────
 const TEAM_META: Record<string, { gradient: string; initials: string; role: string; email: string }> = {
-  Farheen:  { gradient: "linear-gradient(135deg,#092045,#051329)", initials: "FA", role: "Head of Legal",           email: "farheen.ansari@gofynd.com" },
+  Farheen:  { gradient: "linear-gradient(135deg,#092045,#051329)", initials: "FA", role: "Company Secretary|Legal",  email: "farheen.ansari@gofynd.com" },
   Aditi:    { gradient: "linear-gradient(135deg,#3B5A85,#092045)", initials: "AS", role: "Legal Associate",          email: "aditi.sinha@gofynd.com" },
   Samiksha: { gradient: "linear-gradient(135deg,#092045,#6B87AB)", initials: "SP", role: "Legal Associate",          email: "samiksha.parekh@gofynd.com" },
   Sreshta:  { gradient: "linear-gradient(135deg,#1C1C1E,#092045)", initials: "SR", role: "Legal Associate",          email: "sreshtha@gofynd.com" },
