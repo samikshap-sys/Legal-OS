@@ -844,6 +844,60 @@ export const legalRouter = router({
       }
     }),
 
+  /** Verify the OTP JioSign emailed/texted to the signer (admin relays it here, admin only) */
+  jiosignVerifyOtp: publicProcedure
+    .input(z.object({ id: z.number(), otp: z.string().min(1) }))
+    .mutation(async ({ input, ctx }) => {
+      const lcUser = await getLcUser(ctx.req);
+      if (!lcUser || !LC_ADMIN_EMAILS.has(lcUser.email)) {
+        throw new Error('FORBIDDEN: admin access required');
+      }
+      const envelope = await getJioSignEnvelope(input.id);
+      if (!envelope || !envelope.actionToken) throw new Error('Envelope not found or not yet sent');
+
+      try {
+        await jiosign.verifyOtp(envelope.actionToken, input.otp);
+        await updateEnvelope(input.id, { status: 'otp-verified' });
+        return await getJioSignEnvelope(input.id);
+      } catch (err) {
+        const message = describeJioSignError(err);
+        await updateEnvelope(input.id, { status: 'failed', errorMessage: message });
+        throw new Error(message);
+      }
+    }),
+
+  /** Render the signer's name + signature/initial images onto the document to finalize it (admin only) */
+  jiosignCompleteSign: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().min(1),
+      signatureBase64: z.string().min(1),
+      initialsBase64: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const lcUser = await getLcUser(ctx.req);
+      if (!lcUser || !LC_ADMIN_EMAILS.has(lcUser.email)) {
+        throw new Error('FORBIDDEN: admin access required');
+      }
+      const envelope = await getJioSignEnvelope(input.id);
+      if (!envelope || !envelope.actionToken) throw new Error('Envelope not found or not yet sent');
+
+      try {
+        await jiosign.completeSign({
+          actionToken: envelope.actionToken,
+          name: input.name,
+          signatureImg: Buffer.from(input.signatureBase64, 'base64'),
+          initialImg: input.initialsBase64 ? Buffer.from(input.initialsBase64, 'base64') : undefined,
+        });
+        await updateEnvelope(input.id, { status: 'signed' });
+        return await getJioSignEnvelope(input.id);
+      } catch (err) {
+        const message = describeJioSignError(err);
+        await updateEnvelope(input.id, { status: 'failed', errorMessage: message });
+        throw new Error(message);
+      }
+    }),
+
   /** Poll JioSign for completion on one envelope (admin only) */
   jiosignRefreshStatus: publicProcedure
     .input(z.object({ id: z.number() }))

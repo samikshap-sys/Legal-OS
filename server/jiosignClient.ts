@@ -1,22 +1,22 @@
 /**
  * jiosignClient.ts — thin client for JioSign's upstream document-signing API.
- * Endpoint shapes and headers are taken from the official "JioSign API
- * Specification v2.5" PDF (downloaded from the Integrations tab of the
- * gofynd.com JioSign business account), cross-checked against
- * JIOSIGN_INTEGRATION.md. Scoped to the "sender" side of the flow: create →
- * upload → initiate. Once initiated, JioSign notifies the signer directly
- * (email/SMS) and they complete OTP entry + signing on JioSign's own hosted
- * page — this app never collects OTPs or signature images itself.
+ * Endpoint shapes and headers are cross-checked against both the official
+ * "JioSign API Specification v2.5" PDF and a live Postman SIT walkthrough
+ * (JIO SIGN API Routing doc) that captured real request/response payloads.
  *
- * Per the official spec's Request Headers tables (sections 4.1.2 / 4.2.1),
- * document-management calls need only: Ip-Address, Content-Type, Token, Txn,
- * and (optional) Mac-Id — no mTLS client certificate. `Token` is the
- * long-lived JWT downloaded once from Profile → Integrations → "Generate
- * Access Token" in the JioSign portal (not something this app requests via
- * API — the old token/session-generation endpoints are deprecated). `Txn` is
- * a per-request identifier the *caller* generates for traceability; JioSign
- * does not enforce any particular format or uniqueness beyond "don't reuse
- * it," so a fresh UUID is generated for every call here.
+ * JioSign does NOT host a signing page — it emails/SMSes the OTP straight to
+ * the participant, and this app is responsible for the full loop: initiate →
+ * collect the OTP from the signer → verifyOtp → collect their name +
+ * signature/initial images → completeSign → poll status → download.
+ *
+ * Headers used on every call: Ip-Address, Mac-Id, Token, Txn, Content-Type
+ * (json or multipart depending on the endpoint) — no mTLS client certificate.
+ * `Token` is the long-lived JWT downloaded once from Profile → Integrations →
+ * "Generate Access Token" in the JioSign portal. `Txn` is a per-request
+ * identifier the *caller* generates for traceability; JioSign does not
+ * enforce any particular format or uniqueness beyond "don't reuse it," so a
+ * fresh UUID is generated for every call here. `Action-Token` (returned by
+ * sign/initiate) scopes every subsequent call in that signer's flow.
  */
 import axios, { type AxiosInstance } from 'axios';
 import { randomUUID } from 'crypto';
@@ -126,6 +126,36 @@ export async function initiateSign(
   const actionToken = data['action-token'] || data.actionToken || data?.data?.['action-token'] || '';
   const txnId = data.txnid || data.transactionId || data.txn || data?.data?.txnid || '';
   return { actionToken, txnId };
+}
+
+/** Step 4: verify the OTP JioSign emailed/texted to the signer. */
+export async function verifyOtp(actionToken: string, code: string): Promise<Record<string, unknown>> {
+  const res = await getClient().post('/docmgmt/v1.1/document/sign/verifyotp', { code }, {
+    headers: { ...txnHeader(), 'Action-Token': actionToken },
+  });
+  return res.data || {};
+}
+
+/** Step 5: render the signer's name + signature/initial images onto the document to finalize it. */
+export async function completeSign(opts: {
+  actionToken: string;
+  name: string;
+  signatureImg: Buffer;
+  signatureFileName?: string;
+  initialImg?: Buffer;
+  initialFileName?: string;
+}): Promise<Record<string, unknown>> {
+  const form = new FormData();
+  form.append('name', opts.name);
+  form.append('signatureImg', new Blob([new Uint8Array(opts.signatureImg)]), opts.signatureFileName || 'signature.png');
+  // JioSign's own walkthrough reuses the signature image as the initial image when a
+  // separate one isn't supplied — initials are a secondary mark, not a distinct signature.
+  const initialBuf = opts.initialImg || opts.signatureImg;
+  form.append('initialImg', new Blob([new Uint8Array(initialBuf)]), opts.initialFileName || opts.signatureFileName || 'initial.png');
+  const res = await getClient().post('/docmgmt/v1.1/document/sign', form, {
+    headers: { ...txnHeader(), 'Action-Token': opts.actionToken },
+  });
+  return res.data || {};
 }
 
 /** Poll completion for a signer's action. Scoped by Action-Token, not groupId, per JioSign. */

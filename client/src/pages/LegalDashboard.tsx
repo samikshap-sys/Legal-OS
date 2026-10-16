@@ -1020,9 +1020,42 @@ interface JioSignEnvelope {
   errorMessage: string;
 }
 
+// Reads a File into a base64 string (stripped of the data: URL prefix), matching the
+// pattern used elsewhere in this file for signed-document uploads.
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
+    reader.onerror = () => reject(new Error('Could not read that file.'));
+    reader.readAsDataURL(file);
+  });
+}
+
 function JioSignEnvelopeRow({ envelope, onUpdate, isAdmin }: { envelope: JioSignEnvelope; onUpdate: () => void; isAdmin: boolean }) {
   const refreshMutation = trpc.legal.jiosignRefreshStatus.useMutation({ onSuccess: onUpdate });
   const fetchMutation = trpc.legal.jiosignFetchSignedFile.useMutation({ onSuccess: onUpdate });
+  const verifyOtpMutation = trpc.legal.jiosignVerifyOtp.useMutation({ onSuccess: onUpdate });
+  const completeSignMutation = trpc.legal.jiosignCompleteSign.useMutation({ onSuccess: onUpdate });
+
+  const [otp, setOtp] = useState('');
+  const [signerName, setSignerName] = useState('');
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [initialsFile, setInitialsFile] = useState<File | null>(null);
+  const [signError, setSignError] = useState('');
+
+  const handleCompleteSign = async () => {
+    if (!signerName.trim() || !signatureFile) { setSignError('Signer name and a signature image are required.'); return; }
+    setSignError('');
+    try {
+      const signatureBase64 = await readFileAsBase64(signatureFile);
+      const initialsBase64 = initialsFile ? await readFileAsBase64(initialsFile) : undefined;
+      completeSignMutation.mutate({ id: envelope.id, name: signerName.trim(), signatureBase64, initialsBase64 });
+    } catch (e: any) {
+      setSignError(e?.message || 'Could not read the image file.');
+    }
+  };
+
+  const errorMessage = (verifyOtpMutation.error?.message) || (completeSignMutation.error?.message) || envelope.errorMessage;
 
   return (
     <tr>
@@ -1030,8 +1063,8 @@ function JioSignEnvelopeRow({ envelope, onUpdate, isAdmin }: { envelope: JioSign
       <td>{envelope.createdAt ? new Date(envelope.createdAt).toLocaleDateString('en-IN') : '—'}</td>
       <td>
         <span className="lc-chip">{envelope.status}</span>
-        {envelope.status === 'failed' && envelope.errorMessage && (
-          <div style={{ fontSize: '0.7rem', color: '#dc2626', marginTop: '0.25rem' }}>{envelope.errorMessage}</div>
+        {envelope.status === 'failed' && errorMessage && (
+          <div style={{ fontSize: '0.7rem', color: '#dc2626', marginTop: '0.25rem' }}>{errorMessage}</div>
         )}
       </td>
       <td>
@@ -1043,7 +1076,53 @@ function JioSignEnvelopeRow({ envelope, onUpdate, isAdmin }: { envelope: JioSign
             <i className="fa-solid fa-file-signature" style={{ marginRight: 4 }}></i>
             Download
           </a>
-        ) : isAdmin && envelope.status !== 'draft' && envelope.status !== 'failed' ? (
+        ) : !isAdmin ? '—' : envelope.status === 'sent' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 220 }}>
+            <span style={{ fontSize: '0.68rem', color: 'var(--text3)' }}>Ask the signer for the OTP JioSign sent them:</span>
+            <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <input
+                type="text"
+                placeholder="Enter OTP"
+                value={otp}
+                onChange={e => setOtp(e.target.value)}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.5rem', border: '1px solid var(--border)', borderRadius: 6, width: 100 }}
+              />
+              <button
+                className="btn-toggle-upd"
+                disabled={!otp.trim() || verifyOtpMutation.isPending}
+                onClick={() => verifyOtpMutation.mutate({ id: envelope.id, otp: otp.trim() })}
+              >
+                {verifyOtpMutation.isPending ? 'Verifying…' : 'Verify OTP'}
+              </button>
+            </div>
+            {verifyOtpMutation.error && <div style={{ fontSize: '0.68rem', color: '#dc2626' }}>{verifyOtpMutation.error.message}</div>}
+          </div>
+        ) : envelope.status === 'otp-verified' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 240 }}>
+            <input
+              type="text"
+              placeholder="Signer's full name"
+              value={signerName}
+              onChange={e => setSignerName(e.target.value)}
+              style={{ fontSize: '0.75rem', padding: '0.3rem 0.5rem', border: '1px solid var(--border)', borderRadius: 6 }}
+            />
+            <label style={{ fontSize: '0.68rem', color: 'var(--text3)' }}>
+              Signature image: <input type="file" accept="image/*" onChange={e => setSignatureFile(e.target.files?.[0] || null)} />
+            </label>
+            <label style={{ fontSize: '0.68rem', color: 'var(--text3)' }}>
+              Initials image (optional): <input type="file" accept="image/*" onChange={e => setInitialsFile(e.target.files?.[0] || null)} />
+            </label>
+            <button
+              className="btn-toggle-upd"
+              disabled={completeSignMutation.isPending}
+              onClick={handleCompleteSign}
+            >
+              {completeSignMutation.isPending ? 'Signing…' : 'Complete Sign'}
+            </button>
+            {signError && <div style={{ fontSize: '0.68rem', color: '#dc2626' }}>{signError}</div>}
+            {completeSignMutation.error && <div style={{ fontSize: '0.68rem', color: '#dc2626' }}>{completeSignMutation.error.message}</div>}
+          </div>
+        ) : envelope.status !== 'draft' && envelope.status !== 'failed' ? (
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
               className="btn-toggle-upd"
