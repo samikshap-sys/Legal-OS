@@ -933,4 +933,21 @@ export const legalRouter = router({
       await updateEnvelope(input.id, { signedDocKey: key, signedDocName: fileName, status: 'completed' });
       return { key, name: fileName };
     }),
+
+  /**
+   * Diagnostic only: reports the public IP this Boltic app's outbound requests egress from,
+   * so it can be handed to JioSign's team to check against their SIT gateway's IP allowlist.
+   * The bare-nginx "401 Authorization Required" JioSign returns (not a JSON app-level error)
+   * indicates the block happens before their application layer — consistent with a perimeter
+   * IP allowlist rather than a bad token/header. Admin only; not wired into any UI.
+   */
+  jiosignDiagnoseEgressIp: publicProcedure.query(async ({ ctx }) => {
+    const lcUser = await getLcUser(ctx.req);
+    if (!lcUser || !LC_ADMIN_EMAILS.has(lcUser.email)) {
+      throw new Error('FORBIDDEN: admin access required');
+    }
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json() as { ip: string };
+    return { ip: data.ip };
+  }),
 });
