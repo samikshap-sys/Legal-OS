@@ -3,12 +3,12 @@
  *
  * Endpoints:
  *   GET  /api/lc/auth/google          — redirect to Google OAuth consent screen
- *   GET  /api/lc/auth/callback        — handle Google callback, enforce @gofynd.com, set cookie
+ *   GET  /api/lc/auth/callback        — handle Google callback, set cookie
  *   GET  /api/lc/auth/me              — return current LC session user (or 401)
  *   POST /api/lc/auth/logout          — clear LC session cookie
  *
  * Session: JWT signed with QB_SESSION_SECRET (reused), stored in httpOnly cookie "lc_session".
- * Domain enforcement: only emails on ALLOWED_DOMAINS are allowed.
+ * Open to any Google account as of 2026-10-27 — no email-domain restriction.
  * Reuses the same Google OAuth client credentials as QueryBee (same app, different cookie).
  */
 import { Router, Request, Response } from "express";
@@ -22,12 +22,6 @@ export const lcAuthRouter = Router();
 
 const LC_COOKIE = "lc_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-// Reliance (ril.com) added alongside Fynd (gofynd.com) per 2026-10-05 request.
-const ALLOWED_DOMAINS = ["gofynd.com", "ril.com"];
-
-function isAllowedEmail(email: string): boolean {
-  return ALLOWED_DOMAINS.some((domain) => email.endsWith(`@${domain}`));
-}
 
 function getSecret(): Uint8Array {
   return new TextEncoder().encode(ENV.qbSessionSecret || "lc-fallback-secret");
@@ -42,7 +36,7 @@ export async function getLcUser(req: Request): Promise<{ email: string; name: st
     const email = payload.email as string;
     const name = (payload.name as string) || "";
     const googleId = (payload.googleId as string) || "";
-    if (!email || !isAllowedEmail(email)) return null;
+    if (!email) return null;
     return { email, name, googleId };
   } catch {
     return null;
@@ -123,11 +117,6 @@ lcAuthRouter.get("/callback", async (req: Request, res: Response) => {
     const email: string = userInfo.email || "";
     const name: string = userInfo.name || userInfo.given_name || email.split("@")[0];
     const googleId: string = userInfo.sub;
-    // Enforce allowed domains
-    if (!isAllowedEmail(email)) {
-      res.redirect(`${origin}/legal-connect?lc_error=domain_not_allowed&email=${encodeURIComponent(email)}`);
-      return;
-    }
     // Create session JWT
     const sessionId = randomUUID();
     const expiresAt = new Date(Date.now() + SESSION_TTL_MS);

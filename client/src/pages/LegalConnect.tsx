@@ -86,10 +86,7 @@ export default function LegalConnect() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const err = params.get("lc_error");
-    if (err === "domain_not_allowed") {
-      const email = params.get("email") || "";
-      setOauthError(`Access denied: ${email} is not a @gofynd.com account.`);
-    } else if (err) {
+    if (err) {
       setOauthError("Google login failed. Please try again.");
     }
   }, []);
@@ -145,9 +142,6 @@ export default function LegalConnect() {
               <button className="lcw-hero-btn-ghost" onClick={lcLogout}>Sign out</button>
             )}
           </div>
-          {!lcUser && (
-            <p className="lcw-hero-note">Only @gofynd.com accounts are permitted</p>
-          )}
           {lcUser && (
             <p className="lcw-hero-note">Signed in as {lcUser.email}</p>
           )}

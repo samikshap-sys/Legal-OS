@@ -4,8 +4,8 @@
  * Usage:
  *   const { lcUser, lcLoading, refetchLcUser, lcLogout } = useLcUser();
  *
- * lcUser is null when not logged in.
- * lcUser.email is always @gofynd.com (enforced server-side).
+ * lcUser is null when not logged in. Login is open to any Google account —
+ * no email-domain restriction is enforced server-side.
  */
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
