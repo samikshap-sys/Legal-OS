@@ -842,6 +842,10 @@ export const legalRouter = router({
         });
         await updateEnvelope(id, { signaturePage: totalPage });
 
+        // Step 3 per JioSign's walkthrough — required or Complete Sign later rejects
+        // with "Please wait to complete the step 3 completed status" (JSOT-IV-007).
+        await jiosign.checkDocumentStatus(groupId);
+
         let firstActionToken = '';
         for (const p of input.participants) {
           if (p.role !== 'signer') continue;
@@ -897,6 +901,12 @@ export const legalRouter = router({
       if (!envelope || !envelope.actionToken) throw new Error('Envelope not found or not yet sent');
 
       try {
+        // Safety net for envelopes created before checkDocumentStatus was wired into the
+        // send flow — hit Step 3 just-in-time so Complete Sign doesn't reject with
+        // "Please wait to complete the step 3 completed status" (JSOT-IV-007).
+        if (envelope.groupId) {
+          try { await jiosign.checkDocumentStatus(envelope.groupId); } catch { /* best-effort nudge */ }
+        }
         await jiosign.completeSign({
           actionToken: envelope.actionToken,
           name: input.name,

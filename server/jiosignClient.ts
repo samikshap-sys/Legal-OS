@@ -136,7 +136,23 @@ export async function uploadDocumentData(opts: {
   return { totalPage };
 }
 
-/** Step 3: start the signing action for one signer — JioSign notifies them directly. */
+/**
+ * Step 3 (per JioSign's own walkthrough): confirm the uploaded document has finished
+ * processing before moving on. Skipping this call entirely — which this client did
+ * until now — surfaces later as a hard failure at the *signing* step instead of here:
+ * JioSign rejects Complete Sign with "Please wait to complete the step 3 completed
+ * status" (JSOT-IV-007) if this checkpoint was never hit, regardless of how much real
+ * time has passed in between (the OTP round-trip alone is easily long enough that this
+ * isn't an async-processing race — JioSign is enforcing the call sequence itself).
+ */
+export async function checkDocumentStatus(groupId: string): Promise<Record<string, unknown>> {
+  const res = await getClient().get(`/docmgmt/v1.1/document/data/status/${groupId}`, {
+    headers: txnHeader(),
+  });
+  return res.data || {};
+}
+
+/** Step 6: start the signing action for one signer — JioSign notifies them directly. */
 export async function initiateSign(
   groupId: string,
   signerEmail: string,
