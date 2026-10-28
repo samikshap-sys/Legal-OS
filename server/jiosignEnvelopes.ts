@@ -18,6 +18,9 @@ export interface JioSignEnvelope {
   errorMessage: string;
   signedDocKey: string;
   signedDocName: string;
+  originalDocKey: string;
+  originalDocName: string;
+  signaturePage: number | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -35,6 +38,9 @@ function normaliseRow(row: typeof lcJiosignEnvelopes.$inferSelect): JioSignEnvel
     errorMessage:      row.error_message ?? '',
     signedDocKey:      row.signed_doc_key ?? '',
     signedDocName:     row.signed_doc_name ?? '',
+    originalDocKey:    row.original_doc_key ?? '',
+    originalDocName:   row.original_doc_name ?? '',
+    signaturePage:     row.signature_page ?? null,
     createdBy:         row.created_by ?? '',
     createdAt:         row.created_at ?? '',
     updatedAt:         row.updated_at ?? '',
@@ -83,15 +89,21 @@ export async function updateEnvelope(id: number, patch: Partial<{
   errorMessage: string;
   signedDocKey: string;
   signedDocName: string;
+  originalDocKey: string;
+  originalDocName: string;
+  signaturePage: number;
 }>): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
   const set: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if (patch.groupId       !== undefined) set.group_id        = patch.groupId;
-  if (patch.actionToken   !== undefined) set.action_token    = patch.actionToken;
-  if (patch.status        !== undefined) set.status          = patch.status;
-  if (patch.errorMessage  !== undefined) set.error_message   = patch.errorMessage;
-  if (patch.signedDocKey  !== undefined) set.signed_doc_key  = patch.signedDocKey;
-  if (patch.signedDocName !== undefined) set.signed_doc_name = patch.signedDocName;
+  if (patch.groupId        !== undefined) set.group_id         = patch.groupId;
+  if (patch.actionToken    !== undefined) set.action_token     = patch.actionToken;
+  if (patch.status         !== undefined) set.status           = patch.status;
+  if (patch.errorMessage   !== undefined) set.error_message    = patch.errorMessage;
+  if (patch.signedDocKey   !== undefined) set.signed_doc_key   = patch.signedDocKey;
+  if (patch.signedDocName  !== undefined) set.signed_doc_name  = patch.signedDocName;
+  if (patch.originalDocKey !== undefined) set.original_doc_key = patch.originalDocKey;
+  if (patch.originalDocName !== undefined) set.original_doc_name = patch.originalDocName;
+  if (patch.signaturePage  !== undefined) set.signature_page   = patch.signaturePage;
   await db.update(lcJiosignEnvelopes).set(set).where(eq(lcJiosignEnvelopes.id, id));
 }

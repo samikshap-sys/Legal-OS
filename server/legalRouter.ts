@@ -820,13 +820,20 @@ export const legalRouter = router({
         await updateEnvelope(id, { groupId, status: 'creating' });
 
         const buffer = Buffer.from(input.fileBase64, 'base64');
-        await jiosign.uploadDocumentData({
+
+        // Keep our own copy of the unsigned document — JioSign's API doesn't hand it
+        // back, and the in-app signing view needs something to render for the signer.
+        const { key: originalDocKey } = await storagePut(`legal/jiosign/${id}/original-${input.fileName}`, buffer, input.contentType);
+        await updateEnvelope(id, { originalDocKey, originalDocName: input.fileName });
+
+        const { totalPage } = await jiosign.uploadDocumentData({
           groupId,
           fileBuffer: buffer,
           fileName: input.fileName,
           message: input.message,
           participants: input.participants,
         });
+        await updateEnvelope(id, { signaturePage: totalPage });
 
         let firstActionToken = '';
         for (const p of input.participants) {

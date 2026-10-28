@@ -116,7 +116,7 @@ export async function uploadDocumentData(opts: {
   fileName: string;
   message: string;
   participants: JioSignParticipant[];
-}): Promise<void> {
+}): Promise<{ totalPage: number }> {
   const parser = new PDFParse({ data: opts.fileBuffer });
   const info = await parser.getInfo();
   await parser.destroy();
@@ -133,6 +133,7 @@ export async function uploadDocumentData(opts: {
   // Cards are auto-placed by JioSign rather than positioned pixel-by-pixel from this app.
   form.append('autoLocateCards', '1');
   await getClient().post('/docmgmt/v1.1/document/data', form, { headers: txnHeader() });
+  return { totalPage };
 }
 
 /** Step 3: start the signing action for one signer — JioSign notifies them directly. */

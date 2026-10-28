@@ -1016,6 +1016,9 @@ interface JioSignEnvelope {
   status: string;
   signedDocKey: string;
   signedDocName: string;
+  originalDocKey: string;
+  originalDocName: string;
+  signaturePage: number | null;
   createdAt: string;
   errorMessage: string;
 }
@@ -1031,7 +1034,34 @@ function readFileAsBase64(file: File): Promise<string> {
   });
 }
 
-function JioSignEnvelopeRow({ envelope, onUpdate, isAdmin }: { envelope: JioSignEnvelope; onUpdate: () => void; isAdmin: boolean }) {
+// Clickable row — opens JioSignDetailView, which mimics JioSign's own hosted
+// signing page (document preview + "signature required" banner + OTP/sign
+// controls) inside Legal Connect instead of sending the admin out to JioSign.
+function JioSignRow({ envelope, onOpen }: { envelope: JioSignEnvelope; onOpen: () => void }) {
+  return (
+    <tr onClick={onOpen} style={{ cursor: 'pointer' }}>
+      <td style={{ fontWeight: 600 }}>{envelope.documentName || '—'}</td>
+      <td>{envelope.createdAt ? new Date(envelope.createdAt).toLocaleDateString('en-IN') : '—'}</td>
+      <td><span className="lc-chip">{envelope.status}</span></td>
+      <td>
+        {envelope.signedDocKey ? (
+          <a
+            href={`/api/download?key=${encodeURIComponent(envelope.signedDocKey)}&name=${encodeURIComponent(envelope.signedDocName)}`}
+            style={{ fontSize: '0.72rem', color: 'var(--accent)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <i className="fa-solid fa-file-signature" style={{ marginRight: 4 }}></i>
+            Download
+          </a>
+        ) : (
+          <span style={{ fontSize: '0.72rem', color: 'var(--accent)' }}>View →</span>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function JioSignDetailView({ envelope, isAdmin, onBack, onUpdate }: { envelope: JioSignEnvelope; isAdmin: boolean; onBack: () => void; onUpdate: () => void }) {
   const refreshMutation = trpc.legal.jiosignRefreshStatus.useMutation({ onSuccess: onUpdate });
   const fetchMutation = trpc.legal.jiosignFetchSignedFile.useMutation({ onSuccess: onUpdate });
   const verifyOtpMutation = trpc.legal.jiosignVerifyOtp.useMutation({ onSuccess: onUpdate });
@@ -1055,93 +1085,109 @@ function JioSignEnvelopeRow({ envelope, onUpdate, isAdmin }: { envelope: JioSign
     }
   };
 
-  const errorMessage = (verifyOtpMutation.error?.message) || (completeSignMutation.error?.message) || envelope.errorMessage;
+  const errorMessage = verifyOtpMutation.error?.message || completeSignMutation.error?.message || envelope.errorMessage;
+  const needsSignature = envelope.status === 'sent' || envelope.status === 'otp-verified';
+  const downloadUrl = envelope.signedDocKey
+    ? `/api/download?key=${encodeURIComponent(envelope.signedDocKey)}&name=${encodeURIComponent(envelope.signedDocName)}`
+    : '';
 
   return (
-    <tr>
-      <td style={{ fontWeight: 600 }}>{envelope.documentName || '—'}</td>
-      <td>{envelope.createdAt ? new Date(envelope.createdAt).toLocaleDateString('en-IN') : '—'}</td>
-      <td>
-        <span className="lc-chip">{envelope.status}</span>
-        {envelope.status === 'failed' && errorMessage && (
-          <div style={{ fontSize: '0.7rem', color: '#dc2626', marginTop: '0.25rem' }}>{errorMessage}</div>
-        )}
-      </td>
-      <td>
-        {envelope.signedDocKey ? (
-          <a
-            href={`/api/download?key=${encodeURIComponent(envelope.signedDocKey)}&name=${encodeURIComponent(envelope.signedDocName)}`}
-            style={{ fontSize: '0.72rem', color: 'var(--accent)' }}
-          >
-            <i className="fa-solid fa-file-signature" style={{ marginRight: 4 }}></i>
-            Download
-          </a>
-        ) : !isAdmin ? '—' : envelope.status === 'sent' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 220 }}>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text3)' }}>Ask the signer for the OTP JioSign sent them:</span>
-            <div style={{ display: 'flex', gap: '0.4rem' }}>
+    <div className="lc-card">
+      <button className="btn-toggle-upd" onClick={onBack} style={{ marginBottom: '1rem' }}>
+        <i className="fa-solid fa-arrow-left" style={{ marginRight: 6 }}></i> Back to Documents
+      </button>
+
+      <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 480px', minWidth: 320 }}>
+          <h2 style={{ margin: '0 0 0.25rem' }}>{envelope.documentName || 'Untitled document'}</h2>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text3)', marginBottom: '0.75rem' }}>
+            <span className="lc-chip">{envelope.status}</span>
+            {envelope.createdAt && <span style={{ marginLeft: 8 }}>{new Date(envelope.createdAt).toLocaleString('en-IN')}</span>}
+          </div>
+          {envelope.originalDocKey ? (
+            <iframe
+              src={`/manus-storage/${envelope.originalDocKey}`}
+              title={envelope.documentName}
+              style={{ width: '100%', height: 640, border: '1px solid var(--border)', borderRadius: 8 }}
+            />
+          ) : (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text3)', border: '1px dashed var(--border)', borderRadius: 8 }}>
+              No document preview available for this envelope.
+            </div>
+          )}
+        </div>
+
+        <div style={{ flex: '0 0 300px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {needsSignature && envelope.signaturePage && (
+            <div style={{ background: '#e6fbf3', border: '1px solid #8cf2ce', borderRadius: 8, padding: '0.75rem' }}>
+              <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Your signature required</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text3)' }}>Signature on page {envelope.signaturePage}</div>
+            </div>
+          )}
+
+          {envelope.signedDocKey ? (
+            <a href={downloadUrl} className="btn-submit-req" style={{ display: 'inline-block', textAlign: 'center', textDecoration: 'none' }}>
+              <i className="fa-solid fa-file-signature" style={{ marginRight: 6 }}></i> Download Signed Copy
+            </a>
+          ) : !isAdmin ? (
+            <div style={{ fontSize: '0.8rem', color: 'var(--text3)' }}>Waiting on the signer.</div>
+          ) : envelope.status === 'sent' ? (
+            <>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text3)' }}>Ask the signer for the OTP JioSign sent them, then enter it here:</div>
               <input
                 type="text"
                 placeholder="Enter OTP"
                 value={otp}
                 onChange={e => setOtp(e.target.value)}
-                style={{ fontSize: '0.75rem', padding: '0.3rem 0.5rem', border: '1px solid var(--border)', borderRadius: 6, width: 100 }}
+                style={{ fontSize: '0.85rem', padding: '0.45rem 0.6rem', border: '1px solid var(--border)', borderRadius: 6 }}
               />
               <button
-                className="btn-toggle-upd"
+                className="btn-submit-req"
                 disabled={!otp.trim() || verifyOtpMutation.isPending}
                 onClick={() => verifyOtpMutation.mutate({ id: envelope.id, otp: otp.trim() })}
               >
                 {verifyOtpMutation.isPending ? 'Verifying…' : 'Verify OTP'}
               </button>
-            </div>
-            {verifyOtpMutation.error && <div style={{ fontSize: '0.68rem', color: '#dc2626' }}>{verifyOtpMutation.error.message}</div>}
-          </div>
-        ) : envelope.status === 'otp-verified' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 240 }}>
-            <input
-              type="text"
-              placeholder="Signer's full name"
-              value={signerName}
-              onChange={e => setSignerName(e.target.value)}
-              style={{ fontSize: '0.75rem', padding: '0.3rem 0.5rem', border: '1px solid var(--border)', borderRadius: 6 }}
-            />
-            <label style={{ fontSize: '0.68rem', color: 'var(--text3)' }}>
-              Signature image: <input type="file" accept="image/*" onChange={e => setSignatureFile(e.target.files?.[0] || null)} />
-            </label>
-            <label style={{ fontSize: '0.68rem', color: 'var(--text3)' }}>
-              Initials image (optional): <input type="file" accept="image/*" onChange={e => setInitialsFile(e.target.files?.[0] || null)} />
-            </label>
-            <button
-              className="btn-toggle-upd"
-              disabled={completeSignMutation.isPending}
-              onClick={handleCompleteSign}
-            >
-              {completeSignMutation.isPending ? 'Signing…' : 'Complete Sign'}
-            </button>
-            {signError && <div style={{ fontSize: '0.68rem', color: '#dc2626' }}>{signError}</div>}
-            {completeSignMutation.error && <div style={{ fontSize: '0.68rem', color: '#dc2626' }}>{completeSignMutation.error.message}</div>}
-          </div>
-        ) : envelope.status !== 'draft' && envelope.status !== 'failed' ? (
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button
-              className="btn-toggle-upd"
-              disabled={refreshMutation.isPending}
-              onClick={() => refreshMutation.mutate({ id: envelope.id })}
-            >
-              {refreshMutation.isPending ? 'Checking…' : 'Refresh Status'}
-            </button>
-            <button
-              className="btn-toggle-upd"
-              disabled={fetchMutation.isPending}
-              onClick={() => fetchMutation.mutate({ id: envelope.id })}
-            >
-              {fetchMutation.isPending ? 'Fetching…' : 'Fetch Signed Copy'}
-            </button>
-          </div>
-        ) : '—'}
-      </td>
-    </tr>
+              {verifyOtpMutation.error && <div style={{ fontSize: '0.75rem', color: '#dc2626' }}>{verifyOtpMutation.error.message}</div>}
+            </>
+          ) : envelope.status === 'otp-verified' ? (
+            <>
+              <input
+                type="text"
+                placeholder="Signer's full name"
+                value={signerName}
+                onChange={e => setSignerName(e.target.value)}
+                style={{ fontSize: '0.85rem', padding: '0.45rem 0.6rem', border: '1px solid var(--border)', borderRadius: 6 }}
+              />
+              <label style={{ fontSize: '0.78rem', color: 'var(--text3)' }}>
+                Signature image
+                <input type="file" accept="image/*" onChange={e => setSignatureFile(e.target.files?.[0] || null)} style={{ display: 'block', marginTop: 4 }} />
+              </label>
+              <label style={{ fontSize: '0.78rem', color: 'var(--text3)' }}>
+                Initials image (optional)
+                <input type="file" accept="image/*" onChange={e => setInitialsFile(e.target.files?.[0] || null)} style={{ display: 'block', marginTop: 4 }} />
+              </label>
+              <button className="btn-submit-req" disabled={completeSignMutation.isPending} onClick={handleCompleteSign}>
+                {completeSignMutation.isPending ? 'Signing…' : 'Adopt & Sign'}
+              </button>
+              {signError && <div style={{ fontSize: '0.75rem', color: '#dc2626' }}>{signError}</div>}
+              {completeSignMutation.error && <div style={{ fontSize: '0.75rem', color: '#dc2626' }}>{completeSignMutation.error.message}</div>}
+            </>
+          ) : envelope.status === 'failed' ? (
+            <div style={{ fontSize: '0.8rem', color: '#dc2626' }}>{errorMessage}</div>
+          ) : envelope.status !== 'draft' ? (
+            <>
+              <button className="btn-toggle-upd" disabled={refreshMutation.isPending} onClick={() => refreshMutation.mutate({ id: envelope.id })}>
+                {refreshMutation.isPending ? 'Checking…' : 'Refresh Status'}
+              </button>
+              <button className="btn-toggle-upd" disabled={fetchMutation.isPending} onClick={() => fetchMutation.mutate({ id: envelope.id })}>
+                {fetchMutation.isPending ? 'Fetching…' : 'Fetch Signed Copy'}
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1149,13 +1195,15 @@ function JioSignPage() {
   const { lcUser } = useLcUser();
   const isAdmin = !!(lcUser && LC_ADMIN_EMAILS.has(lcUser.email));
   const [showWizard, setShowWizard] = useState(false);
+  const [openId, setOpenId] = useState<number | null>(null);
   const { data: envelopes, error, refetch } = trpc.legal.jiosignListEnvelopes.useQuery();
+  const openEnvelope = envelopes?.find(e => e.id === openId) || null;
 
   return (
     <div className="lc-pg-content">
       <div className="lc-ph-row">
         <h1 className="lc-ph-h">JioSign</h1>
-        {isAdmin && !showWizard && (
+        {isAdmin && !showWizard && !openEnvelope && (
           <button className="btn-submit-req" onClick={() => setShowWizard(true)}>Upload Document</button>
         )}
       </div>
@@ -1164,6 +1212,13 @@ function JioSignPage() {
         <JioSignWizard
           onDone={() => { setShowWizard(false); refetch(); }}
           onCancel={() => setShowWizard(false)}
+        />
+      ) : openEnvelope ? (
+        <JioSignDetailView
+          envelope={openEnvelope}
+          isAdmin={isAdmin}
+          onBack={() => setOpenId(null)}
+          onUpdate={refetch}
         />
       ) : (
         <div className="lc-card" style={{ overflowX: 'auto' }}>
@@ -1189,7 +1244,7 @@ function JioSignPage() {
                 </thead>
                 <tbody>
                   {envelopes.map(e => (
-                    <JioSignEnvelopeRow key={e.id} envelope={e} onUpdate={refetch} isAdmin={isAdmin} />
+                    <JioSignRow key={e.id} envelope={e} onOpen={() => setOpenId(e.id)} />
                   ))}
                 </tbody>
               </table>
