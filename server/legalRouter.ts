@@ -821,10 +821,17 @@ export const legalRouter = router({
 
         const buffer = Buffer.from(input.fileBase64, 'base64');
 
-        // Keep our own copy of the unsigned document — JioSign's API doesn't hand it
-        // back, and the in-app signing view needs something to render for the signer.
-        const { key: originalDocKey } = await storagePut(`legal/jiosign/${id}/original-${input.fileName}`, buffer, input.contentType);
-        await updateEnvelope(id, { originalDocKey, originalDocName: input.fileName });
+        // Keep our own copy of the unsigned document so the in-app signing view
+        // has something to render — JioSign's API doesn't hand it back. Best-effort
+        // only: the underlying storage backend (Drive via a service account with no
+        // storage quota of its own) can fail independently of JioSign, and a preview
+        // copy failing must never block the actual send-for-signature call below.
+        try {
+          const { key: originalDocKey } = await storagePut(`legal/jiosign/${id}/original-${input.fileName}`, buffer, input.contentType);
+          await updateEnvelope(id, { originalDocKey, originalDocName: input.fileName });
+        } catch (storageErr) {
+          console.warn('[JioSign] Could not persist original document for in-app preview:', storageErr);
+        }
 
         const { totalPage } = await jiosign.uploadDocumentData({
           groupId,
