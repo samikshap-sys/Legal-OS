@@ -20,6 +20,7 @@
  */
 import axios, { type AxiosInstance } from 'axios';
 import { randomUUID } from 'crypto';
+import { PDFParse } from 'pdf-parse';
 import { ENV } from './_core/env';
 
 let client: AxiosInstance | null = null;
@@ -55,11 +56,21 @@ export interface JioSignParticipant {
 
 // idType 1 = email identifier. access 1 = sign, access 2 = view.
 // participantTag increments per signer (matches the "1", "2" tags in the doc's example).
-function buildParticipantPayload(participants: JioSignParticipant[]) {
+//
+// `cards` uses JioSign's manual-placement coordinates rather than the `cTag`-based
+// auto-locate shorthand — `autoLocateCards: 1` alone requires a text-tag marker
+// embedded in the PDF content that we have no way to guarantee is present, so every
+// signer gets an explicit card instead. Confirmed against a live, successful SIT
+// request: cardType/cardX/cardY/cardH/cardW/totalPage/cardPageNo/cardOnPage/cardColor.
+// Cards are placed on the document's last page; multiple signers on that page are
+// staggered horizontally (cardX) so their cards don't overlap.
+function buildParticipantPayload(participants: JioSignParticipant[], totalPage: number) {
+  const cardPageNo = totalPage;
   let signerTag = 0;
+  let cardOnPage = 0;
   return participants.map(p => {
     const isViewer = p.role === 'viewer';
-    if (!isViewer) signerTag += 1;
+    if (!isViewer) { signerTag += 1; cardOnPage += 1; }
     return {
       idValue: p.email,
       idType: 1,
@@ -69,12 +80,22 @@ function buildParticipantPayload(participants: JioSignParticipant[]) {
       ...(isViewer ? {} : { participantTag: String(signerTag) }),
       notifications: [
         { frequency: 1, freq_unit: 3, notification_type: 1, enable: 1 },
-        { frequency: 1, freq_unit: 3, notification_type: 6, enable: isViewer ? 1 : 0 },
-        { frequency: 1, freq_unit: 3, notification_type: 7, enable: 1 },
+        { frequency: 1, freq_unit: 3, notification_type: 2, enable: 1 },
+        { frequency: 1, freq_unit: 3, notification_type: 6, enable: 1 },
+        { frequency: 1, freq_unit: 3, notification_type: 13, enable: 1 },
       ],
       ...(isViewer ? {} : {
-        settings: [{ type: 22, enable: 1 }],
-        cards: [{ cTag: 1, cardColor: '#8cf2ce' }],
+        cards: [{
+          cardType: 2,
+          cardX: 23 + (cardOnPage - 1) * 130,
+          cardY: 710,
+          cardH: 44,
+          cardW: 105,
+          totalPage,
+          cardPageNo,
+          cardOnPage,
+          cardColor: '#8CF2CE',
+        }],
       }),
     };
   });
@@ -96,11 +117,16 @@ export async function uploadDocumentData(opts: {
   message: string;
   participants: JioSignParticipant[];
 }): Promise<void> {
+  const parser = new PDFParse({ data: opts.fileBuffer });
+  const info = await parser.getInfo();
+  await parser.destroy();
+  const totalPage = info.total || 1;
+
   const form = new FormData();
   form.append('groupId', opts.groupId);
   form.append('message', opts.message || '');
   form.append('file', new Blob([new Uint8Array(opts.fileBuffer)]), opts.fileName);
-  form.append('participants', JSON.stringify(buildParticipantPayload(opts.participants)));
+  form.append('participants', JSON.stringify(buildParticipantPayload(opts.participants, totalPage)));
   // Field name is "settings" (not "grpSettings") per the live Postman collection —
   // the walkthrough doc's field name was wrong and JioSign silently ignores unknown keys.
   form.append('settings', JSON.stringify([{ type: 24, enable: 1 }]));
