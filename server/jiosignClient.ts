@@ -136,20 +136,36 @@ export async function uploadDocumentData(opts: {
   return { totalPage };
 }
 
-/**
- * Step 3 (per JioSign's own walkthrough): confirm the uploaded document has finished
- * processing before moving on. Skipping this call entirely — which this client did
- * until now — surfaces later as a hard failure at the *signing* step instead of here:
- * JioSign rejects Complete Sign with "Please wait to complete the step 3 completed
- * status" (JSOT-IV-007) if this checkpoint was never hit, regardless of how much real
- * time has passed in between (the OTP round-trip alone is easily long enough that this
- * isn't an async-processing race — JioSign is enforcing the call sequence itself).
- */
+/** Step 3 (per JioSign's own walkthrough): check whether the uploaded document has
+ * finished async processing on JioSign's side. */
 export async function checkDocumentStatus(groupId: string): Promise<Record<string, unknown>> {
   const res = await getClient().get(`/docmgmt/v1.1/document/data/status/${groupId}`, {
     headers: txnHeader(),
   });
   return res.data || {};
+}
+
+/**
+ * Poll Step 3 until JioSign finishes processing the uploaded document. A single
+ * immediate call right after upload fails with "Please wait to complete the step 3
+ * completed status" (JSOT-IV-007) — this is a genuine async-completion gate on
+ * JioSign's side, not a one-time "did you call it" checkpoint, so it needs retrying
+ * with backoff rather than a single call.
+ */
+export async function waitForDocumentReady(groupId: string, opts?: { maxAttempts?: number; delayMs?: number }): Promise<void> {
+  const maxAttempts = opts?.maxAttempts ?? 15;
+  const delayMs = opts?.delayMs ?? 2000;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await checkDocumentStatus(groupId);
+      return;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < maxAttempts) await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('JioSign document processing did not finish in time.');
 }
 
 /** Step 6: start the signing action for one signer — JioSign notifies them directly. */

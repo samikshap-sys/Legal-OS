@@ -844,7 +844,8 @@ export const legalRouter = router({
 
         // Step 3 per JioSign's walkthrough — required or Complete Sign later rejects
         // with "Please wait to complete the step 3 completed status" (JSOT-IV-007).
-        await jiosign.checkDocumentStatus(groupId);
+        // Genuinely async on JioSign's side, so this polls rather than calling once.
+        await jiosign.waitForDocumentReady(groupId);
 
         let firstActionToken = '';
         for (const p of input.participants) {
@@ -901,11 +902,13 @@ export const legalRouter = router({
       if (!envelope || !envelope.actionToken) throw new Error('Envelope not found or not yet sent');
 
       try {
-        // Safety net for envelopes created before checkDocumentStatus was wired into the
-        // send flow — hit Step 3 just-in-time so Complete Sign doesn't reject with
-        // "Please wait to complete the step 3 completed status" (JSOT-IV-007).
+        // Safety net for envelopes created before Step 3 was wired into the send flow
+        // (or where it's still not done by the time the signer gets this far) — without
+        // this, Complete Sign rejects with "Please wait to complete the step 3 completed
+        // status" (JSOT-IV-007). Short budget since processing should already be done by
+        // now (real time passed during the OTP round-trip); a real failure still surfaces.
         if (envelope.groupId) {
-          try { await jiosign.checkDocumentStatus(envelope.groupId); } catch { /* best-effort nudge */ }
+          await jiosign.waitForDocumentReady(envelope.groupId, { maxAttempts: 5, delayMs: 2000 });
         }
         await jiosign.completeSign({
           actionToken: envelope.actionToken,
