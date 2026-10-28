@@ -101,7 +101,9 @@ export async function uploadDocumentData(opts: {
   form.append('message', opts.message || '');
   form.append('file', new Blob([new Uint8Array(opts.fileBuffer)]), opts.fileName);
   form.append('participants', JSON.stringify(buildParticipantPayload(opts.participants)));
-  form.append('grpSettings', JSON.stringify([{ type: 24, enable: 1 }]));
+  // Field name is "settings" (not "grpSettings") per the live Postman collection —
+  // the walkthrough doc's field name was wrong and JioSign silently ignores unknown keys.
+  form.append('settings', JSON.stringify([{ type: 24, enable: 1 }]));
   // Cards are auto-placed by JioSign rather than positioned pixel-by-pixel from this app.
   form.append('autoLocateCards', '1');
   await getClient().post('/docmgmt/v1.1/document/data', form, { headers: txnHeader() });
