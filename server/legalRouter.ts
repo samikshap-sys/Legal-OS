@@ -815,8 +815,20 @@ export const legalRouter = router({
         createdBy:         lcUser.name || lcUser.email,
       });
 
+      // Tags which JioSign call actually failed onto the error message — without this,
+      // every failure in this flow reads identically ("JioSign request failed...") and
+      // we're left guessing from timestamps which step broke, as happened repeatedly
+      // while diagnosing the Step 3 (JSOT-IV-007) issue.
+      async function step<T>(label: string, fn: () => Promise<T>): Promise<T> {
+        try {
+          return await fn();
+        } catch (err) {
+          throw new Error(`[${label}] ${describeJioSignError(err)}`);
+        }
+      }
+
       try {
-        const groupId = await jiosign.createDocument(input.documentName);
+        const groupId = await step('Step 1: Create Envelope', () => jiosign.createDocument(input.documentName));
         await updateEnvelope(id, { groupId, status: 'creating' });
 
         const buffer = Buffer.from(input.fileBase64, 'base64');
@@ -833,25 +845,25 @@ export const legalRouter = router({
           console.warn('[JioSign] Could not persist original document for in-app preview:', storageErr);
         }
 
-        const { totalPage } = await jiosign.uploadDocumentData({
+        const { totalPage } = await step('Step 2: Upload Document', () => jiosign.uploadDocumentData({
           groupId,
           fileBuffer: buffer,
           fileName: input.fileName,
           message: input.message,
           participants: input.participants,
-        });
+        }));
         await updateEnvelope(id, { signaturePage: totalPage });
 
         // Step 3 per JioSign's walkthrough — required or Complete Sign later rejects
         // with "Please wait to complete the step 3 completed status" (JSOT-IV-007).
         // Genuinely async on JioSign's side, so this polls rather than calling once.
-        await jiosign.waitForDocumentReady(groupId);
+        await step('Step 3: Check Document Status', () => jiosign.waitForDocumentReady(groupId));
         await updateEnvelope(id, { documentReadyAt: new Date().toISOString() });
 
         let firstActionToken = '';
         for (const p of input.participants) {
           if (p.role !== 'signer') continue;
-          const { actionToken } = await jiosign.initiateSign(groupId, p.email, input.message);
+          const { actionToken } = await step(`Step 6: Initiate Signing (${p.email})`, () => jiosign.initiateSign(groupId, p.email, input.message));
           if (!firstActionToken) firstActionToken = actionToken;
         }
 
@@ -876,7 +888,11 @@ export const legalRouter = router({
       if (!envelope || !envelope.actionToken) throw new Error('Envelope not found or not yet sent');
 
       try {
-        await jiosign.verifyOtp(envelope.actionToken, input.otp);
+        try {
+          await jiosign.verifyOtp(envelope.actionToken, input.otp);
+        } catch (err) {
+          throw new Error(`[Step 7: Verify OTP] ${describeJioSignError(err)}`);
+        }
         await updateEnvelope(input.id, { status: 'otp-verified' });
         return await getJioSignEnvelope(input.id);
       } catch (err) {
@@ -909,15 +925,23 @@ export const legalRouter = router({
         // status" (JSOT-IV-007). Short budget since processing should already be done by
         // now (real time passed during the OTP round-trip); a real failure still surfaces.
         if (envelope.groupId && !envelope.documentReadyAt) {
-          await jiosign.waitForDocumentReady(envelope.groupId, { maxAttempts: 5, delayMs: 2000 });
+          try {
+            await jiosign.waitForDocumentReady(envelope.groupId, { maxAttempts: 5, delayMs: 2000 });
+          } catch (err) {
+            throw new Error(`[Step 3: Check Document Status] ${describeJioSignError(err)}`);
+          }
           await updateEnvelope(input.id, { documentReadyAt: new Date().toISOString() });
         }
-        await jiosign.completeSign({
-          actionToken: envelope.actionToken,
-          name: input.name,
-          signatureImg: Buffer.from(input.signatureBase64, 'base64'),
-          initialImg: input.initialsBase64 ? Buffer.from(input.initialsBase64, 'base64') : undefined,
-        });
+        try {
+          await jiosign.completeSign({
+            actionToken: envelope.actionToken,
+            name: input.name,
+            signatureImg: Buffer.from(input.signatureBase64, 'base64'),
+            initialImg: input.initialsBase64 ? Buffer.from(input.initialsBase64, 'base64') : undefined,
+          });
+        } catch (err) {
+          throw new Error(`[Step 8: Complete Sign] ${describeJioSignError(err)}`);
+        }
         await updateEnvelope(input.id, { status: 'signed' });
         return await getJioSignEnvelope(input.id);
       } catch (err) {
