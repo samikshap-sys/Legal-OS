@@ -198,6 +198,20 @@ export async function verifyOtp(actionToken: string, code: string): Promise<Reco
 }
 
 /** Step 5: render the signer's name + signature/initial images onto the document to finalize it. */
+function isStepGateError(err: unknown): boolean {
+  if (!axios.isAxiosError(err)) return false;
+  const data = err.response?.data;
+  const text = typeof data === 'string' ? data : JSON.stringify(data ?? '');
+  return text.includes('JSOT-IV-007');
+}
+
+/**
+ * Complete Sign independently re-evaluates the same "step 3 completed status" gate
+ * JSOT-IV-007 refers to — observed failing here even after waitForDocumentReady()
+ * already confirmed readiness via the status-check endpoint beforehand. Since the
+ * gate re-triggers regardless of that earlier check, retry Complete Sign itself on
+ * this specific error rather than relying solely on a preparatory check.
+ */
 export async function completeSign(opts: {
   actionToken: string;
   name: string;
@@ -213,10 +227,21 @@ export async function completeSign(opts: {
   // separate one isn't supplied — initials are a secondary mark, not a distinct signature.
   const initialBuf = opts.initialImg || opts.signatureImg;
   form.append('initialImg', new Blob([new Uint8Array(initialBuf)]), opts.initialFileName || opts.signatureFileName || 'initial.png');
-  const res = await getClient().post('/docmgmt/v1.1/document/sign', form, {
-    headers: { ...txnHeader(), 'Action-Token': opts.actionToken },
-  });
-  return res.data || {};
+
+  const maxAttempts = 6;
+  const delayMs = 3000;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await getClient().post('/docmgmt/v1.1/document/sign', form, {
+        headers: { ...txnHeader(), 'Action-Token': opts.actionToken },
+      });
+      return res.data || {};
+    } catch (err) {
+      if (!isStepGateError(err) || attempt === maxAttempts) throw err;
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  throw new Error('JioSign Complete Sign did not clear the step-3 gate in time.');
 }
 
 /** Poll completion for a signer's action. Scoped by Action-Token, not groupId, per JioSign. */
