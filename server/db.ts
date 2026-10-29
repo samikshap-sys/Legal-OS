@@ -82,6 +82,7 @@ async function ensureLegalSchema(db: ReturnType<typeof drizzle>) {
     await db.execute(sql`ALTER TABLE lc_jiosign_envelopes ADD COLUMN IF NOT EXISTS original_doc_key text`);
     await db.execute(sql`ALTER TABLE lc_jiosign_envelopes ADD COLUMN IF NOT EXISTS original_doc_name varchar(255)`);
     await db.execute(sql`ALTER TABLE lc_jiosign_envelopes ADD COLUMN IF NOT EXISTS signature_page integer`);
+    await db.execute(sql`ALTER TABLE lc_jiosign_envelopes ADD COLUMN IF NOT EXISTS document_ready_at varchar(64)`);
 
     // One-time seed of the India KYC docs that already work today (real
     // /manus-storage/ keys) so the admin-managed repository doesn't start

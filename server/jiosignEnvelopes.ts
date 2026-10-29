@@ -21,6 +21,7 @@ export interface JioSignEnvelope {
   originalDocKey: string;
   originalDocName: string;
   signaturePage: number | null;
+  documentReadyAt: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -41,6 +42,7 @@ function normaliseRow(row: typeof lcJiosignEnvelopes.$inferSelect): JioSignEnvel
     originalDocKey:    row.original_doc_key ?? '',
     originalDocName:   row.original_doc_name ?? '',
     signaturePage:     row.signature_page ?? null,
+    documentReadyAt:   row.document_ready_at ?? '',
     createdBy:         row.created_by ?? '',
     createdAt:         row.created_at ?? '',
     updatedAt:         row.updated_at ?? '',
@@ -92,6 +94,7 @@ export async function updateEnvelope(id: number, patch: Partial<{
   originalDocKey: string;
   originalDocName: string;
   signaturePage: number;
+  documentReadyAt: string;
 }>): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
@@ -105,5 +108,6 @@ export async function updateEnvelope(id: number, patch: Partial<{
   if (patch.originalDocKey !== undefined) set.original_doc_key = patch.originalDocKey;
   if (patch.originalDocName !== undefined) set.original_doc_name = patch.originalDocName;
   if (patch.signaturePage  !== undefined) set.signature_page   = patch.signaturePage;
+  if (patch.documentReadyAt !== undefined) set.document_ready_at = patch.documentReadyAt;
   await db.update(lcJiosignEnvelopes).set(set).where(eq(lcJiosignEnvelopes.id, id));
 }

@@ -119,6 +119,7 @@ export const lcJiosignEnvelopes = pgTable("lc_jiosign_envelopes", {
   original_doc_key:  text("original_doc_key"),
   original_doc_name: varchar("original_doc_name", { length: 255 }),
   signature_page:    integer("signature_page"),
+  document_ready_at: varchar("document_ready_at", { length: 64 }),
   created_by:        varchar("created_by", { length: 320 }).notNull().default(""),
   created_at:        varchar("created_at", { length: 64 }).notNull().default(""),
   updated_at:        varchar("updated_at", { length: 64 }).notNull().default(""),

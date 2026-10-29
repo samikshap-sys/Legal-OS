@@ -1019,6 +1019,7 @@ interface JioSignEnvelope {
   originalDocKey: string;
   originalDocName: string;
   signaturePage: number | null;
+  documentReadyAt: string;
   createdAt: string;
   errorMessage: string;
 }
@@ -1103,6 +1104,12 @@ function JioSignDetailView({ envelope, isAdmin, onBack, onUpdate }: { envelope: 
           <div style={{ fontSize: '0.8rem', color: 'var(--text3)', marginBottom: '0.75rem' }}>
             <span className="lc-chip">{envelope.status}</span>
             {envelope.createdAt && <span style={{ marginLeft: 8 }}>{new Date(envelope.createdAt).toLocaleString('en-IN')}</span>}
+          </div>
+          <div style={{ fontSize: '0.75rem', marginBottom: '0.75rem', color: envelope.documentReadyAt ? '#16a34a' : 'var(--text3)' }}>
+            <i className={`fa-solid ${envelope.documentReadyAt ? 'fa-circle-check' : 'fa-clock'}`} style={{ marginRight: 5 }}></i>
+            {envelope.documentReadyAt
+              ? `JioSign finished processing this document — ${new Date(envelope.documentReadyAt).toLocaleString('en-IN')}`
+              : 'Waiting on JioSign to finish processing this document'}
           </div>
           {envelope.originalDocKey ? (
             <iframe

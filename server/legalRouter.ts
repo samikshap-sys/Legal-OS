@@ -846,6 +846,7 @@ export const legalRouter = router({
         // with "Please wait to complete the step 3 completed status" (JSOT-IV-007).
         // Genuinely async on JioSign's side, so this polls rather than calling once.
         await jiosign.waitForDocumentReady(groupId);
+        await updateEnvelope(id, { documentReadyAt: new Date().toISOString() });
 
         let firstActionToken = '';
         for (const p of input.participants) {
@@ -907,8 +908,9 @@ export const legalRouter = router({
         // this, Complete Sign rejects with "Please wait to complete the step 3 completed
         // status" (JSOT-IV-007). Short budget since processing should already be done by
         // now (real time passed during the OTP round-trip); a real failure still surfaces.
-        if (envelope.groupId) {
+        if (envelope.groupId && !envelope.documentReadyAt) {
           await jiosign.waitForDocumentReady(envelope.groupId, { maxAttempts: 5, delayMs: 2000 });
+          await updateEnvelope(input.id, { documentReadyAt: new Date().toISOString() });
         }
         await jiosign.completeSign({
           actionToken: envelope.actionToken,
