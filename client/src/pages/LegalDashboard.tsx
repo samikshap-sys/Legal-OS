@@ -788,6 +788,7 @@ const JIOSIGN_STEPS = [
   { id: 2, label: 'Add Participants' },
   { id: 3, label: 'Manage Signature' },
   { id: 4, label: 'Review & Send' },
+  { id: 5, label: 'Sign this Document' },
 ];
 
 function JioSignStepper({ step }: { step: number }) {
@@ -816,12 +817,17 @@ function JioSignWizard({ onDone, onCancel }: { onDone: () => void; onCancel: () 
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
+  const [sentEnvelopeId, setSentEnvelopeId] = useState<number | null>(null);
 
   const createMutation = trpc.legal.jiosignCreateEnvelope.useMutation({
-    onSuccess: () => { setSending(false); setSent(true); },
+    onSuccess: (data) => { setSending(false); setSentEnvelopeId(data.id); setStep(5); },
     onError: (err) => { setSending(false); setSendError(err.message || 'Failed to send document.'); },
   });
+
+  const sentEnvelopeQuery = trpc.legal.jiosignGetEnvelope.useQuery(
+    { id: sentEnvelopeId as number },
+    { enabled: sentEnvelopeId !== null },
+  );
 
   const handleFileSelect = (f: File) => {
     setFile(f);
@@ -853,15 +859,22 @@ function JioSignWizard({ onDone, onCancel }: { onDone: () => void; onCancel: () 
     reader.readAsDataURL(file);
   };
 
-  if (sent) {
+  if (step === 5 && sentEnvelopeId !== null) {
     return (
-      <div className="lc-card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>✅</div>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Document successfully sent</h2>
-        <p style={{ color: 'var(--text3)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-          {documentName} was sent to {validParticipants.length} participant{validParticipants.length > 1 ? 's' : ''} via JioSign.
-        </p>
-        <button className="btn-submit-req" onClick={onDone}>Go to Document List</button>
+      <div>
+        <JioSignStepper step={step} />
+        <div style={{ marginTop: '1rem' }}>
+          {sentEnvelopeQuery.data ? (
+            <JioSignDetailView
+              envelope={sentEnvelopeQuery.data}
+              isAdmin={true}
+              onBack={onDone}
+              onUpdate={() => sentEnvelopeQuery.refetch()}
+            />
+          ) : (
+            <div className="lc-card lc-loading">Loading…</div>
+          )}
+        </div>
       </div>
     );
   }
@@ -1014,14 +1027,25 @@ interface JioSignEnvelope {
   id: number;
   documentName: string;
   status: string;
+  participantsJson: string;
   signedDocKey: string;
   signedDocName: string;
   originalDocKey: string;
   originalDocName: string;
   signaturePage: number | null;
   documentReadyAt: string;
+  createdBy: string;
   createdAt: string;
   errorMessage: string;
+}
+
+function parseJioSignParticipants(participantsJson: string): JioSignParticipantForm[] {
+  try {
+    const parsed = JSON.parse(participantsJson);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 // Reads a File into a base64 string (stripped of the data: URL prefix), matching the
@@ -1091,6 +1115,8 @@ function JioSignDetailView({ envelope, isAdmin, onBack, onUpdate }: { envelope: 
   const downloadUrl = envelope.signedDocKey
     ? `/api/download?key=${encodeURIComponent(envelope.signedDocKey)}&name=${encodeURIComponent(envelope.signedDocName)}`
     : '';
+  const participants = parseJioSignParticipants(envelope.participantsJson);
+  const isSigned = envelope.status === 'signed' || envelope.status === 'completed';
 
   return (
     <div className="lc-card">
@@ -1098,13 +1124,24 @@ function JioSignDetailView({ envelope, isAdmin, onBack, onUpdate }: { envelope: 
         <i className="fa-solid fa-arrow-left" style={{ marginRight: 6 }}></i> Back to Documents
       </button>
 
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+        <div>
+          <h2 style={{ margin: '0 0 0.3rem' }}>{envelope.documentName || 'Untitled document'}</h2>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text3)' }}>
+            From: {envelope.createdBy || '—'}
+            {participants.length > 0 && <>&nbsp;·&nbsp;To: {participants.map(p => p.email).join(', ')}</>}
+          </div>
+          {envelope.createdAt && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text3)', marginTop: 2 }}>
+              {new Date(envelope.createdAt).toLocaleString('en-IN')}
+            </div>
+          )}
+        </div>
+        <span className="lc-chip">{envelope.status}</span>
+      </div>
+
       <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 480px', minWidth: 320 }}>
-          <h2 style={{ margin: '0 0 0.25rem' }}>{envelope.documentName || 'Untitled document'}</h2>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text3)', marginBottom: '0.75rem' }}>
-            <span className="lc-chip">{envelope.status}</span>
-            {envelope.createdAt && <span style={{ marginLeft: 8 }}>{new Date(envelope.createdAt).toLocaleString('en-IN')}</span>}
-          </div>
           <div style={{ fontSize: '0.75rem', marginBottom: '0.75rem', color: envelope.documentReadyAt ? '#16a34a' : 'var(--text3)' }}>
             <i className={`fa-solid ${envelope.documentReadyAt ? 'fa-circle-check' : 'fa-clock'}`} style={{ marginRight: 5 }}></i>
             {envelope.documentReadyAt
@@ -1125,6 +1162,20 @@ function JioSignDetailView({ envelope, isAdmin, onBack, onUpdate }: { envelope: 
         </div>
 
         <div style={{ flex: '0 0 300px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {participants.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border)' }}>
+              {participants.map((p, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
+                  <i
+                    className={`fa-solid ${isSigned ? 'fa-circle-check' : 'fa-circle'}`}
+                    style={{ color: isSigned ? '#16a34a' : 'var(--border)', fontSize: isSigned ? undefined : '0.6rem' }}
+                  ></i>
+                  <span>{p.email}</span>
+                  <span style={{ color: 'var(--text3)', fontSize: '0.72rem' }}>({p.role === 'signer' ? 'Signer' : 'Viewer'})</span>
+                </div>
+              ))}
+            </div>
+          )}
           {needsSignature && envelope.signaturePage && (
             <div style={{ background: '#e6fbf3', border: '1px solid #8cf2ce', borderRadius: 8, padding: '0.75rem' }}>
               <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Your signature required</div>

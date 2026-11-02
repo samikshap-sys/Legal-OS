@@ -790,6 +790,13 @@ export const legalRouter = router({
     return await listJioSignEnvelopes();
   }),
 
+  /** Single envelope — used by the send wizard's final "Sign this Document" step. */
+  jiosignGetEnvelope: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      return await getJioSignEnvelope(input.id);
+    }),
+
   /** Send a document for signature: create → upload → initiate per signer (admin only) */
   jiosignCreateEnvelope: publicProcedure
     .input(z.object({
