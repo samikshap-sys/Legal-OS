@@ -189,6 +189,37 @@ export async function initiateSign(
   return { actionToken, txnId };
 }
 
+/**
+ * Status check for the sign-initiate action itself, scoped by Action-Token — distinct
+ * from checkDocumentStatus (which is scoped by groupId and checks the upload). Added
+ * after Complete Sign kept failing with "step 3 completed status" (JSOT-IV-007) even
+ * once checkDocumentStatus had already succeeded: this is the matching per-signer
+ * status check for the Initiate step, found in JioSign's own Postman collection
+ * ("Document - Get Sign Initiate Status") sitting between Sign Initiate and Verify OTP.
+ */
+export async function checkSignInitiateStatus(actionToken: string): Promise<Record<string, unknown>> {
+  const res = await getClient().get('/docmgmt/v1.1/document/sign/initiate/status', {
+    headers: { ...txnHeader(), 'Action-Token': actionToken },
+  });
+  return res.data || {};
+}
+
+export async function waitForSignInitiateReady(actionToken: string, opts?: { maxAttempts?: number; delayMs?: number }): Promise<void> {
+  const maxAttempts = opts?.maxAttempts ?? 15;
+  const delayMs = opts?.delayMs ?? 2000;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await checkSignInitiateStatus(actionToken);
+      return;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < maxAttempts) await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('JioSign sign-initiate processing did not finish in time.');
+}
+
 /** Step 4: verify the OTP JioSign emailed/texted to the signer. */
 export async function verifyOtp(actionToken: string, code: string): Promise<Record<string, unknown>> {
   const res = await getClient().post('/docmgmt/v1.1/document/sign/verifyotp', { code }, {

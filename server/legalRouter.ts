@@ -871,6 +871,11 @@ export const legalRouter = router({
         for (const p of input.participants) {
           if (p.role !== 'signer') continue;
           const { actionToken } = await step(`Step 6: Initiate Signing (${p.email})`, () => jiosign.initiateSign(groupId, p.email, input.message));
+          // Per-signer counterpart to the document-level Step 3 check — found in
+          // JioSign's Postman collection as "Document - Get Sign Initiate Status",
+          // scoped by Action-Token rather than groupId. Skipping it is what was
+          // actually causing Complete Sign's persistent JSOT-IV-007 rejection.
+          await step(`Step 6b: Check Sign Initiate Status (${p.email})`, () => jiosign.waitForSignInitiateReady(actionToken));
           if (!firstActionToken) firstActionToken = actionToken;
         }
 
@@ -895,6 +900,10 @@ export const legalRouter = router({
       if (!envelope || !envelope.actionToken) throw new Error('Envelope not found or not yet sent');
 
       try {
+        // Safety net for envelopes initiated before waitForSignInitiateReady was wired
+        // into the send flow — best-effort, since a real failure still surfaces at
+        // Verify OTP itself.
+        try { await jiosign.waitForSignInitiateReady(envelope.actionToken, { maxAttempts: 5, delayMs: 2000 }); } catch { /* best-effort */ }
         try {
           await jiosign.verifyOtp(envelope.actionToken, input.otp);
         } catch (err) {
@@ -939,6 +948,9 @@ export const legalRouter = router({
           }
           await updateEnvelope(input.id, { documentReadyAt: new Date().toISOString() });
         }
+        // Same safety net, per-signer counterpart (see jiosignCreateEnvelope) — best-effort
+        // since a real failure still surfaces at Complete Sign itself below.
+        try { await jiosign.waitForSignInitiateReady(envelope.actionToken, { maxAttempts: 5, delayMs: 2000 }); } catch { /* best-effort */ }
         try {
           await jiosign.completeSign({
             actionToken: envelope.actionToken,
